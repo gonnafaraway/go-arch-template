@@ -3,8 +3,8 @@ package user
 import (
 	"context"
 	"errors"
-	"go-arch-template/internal/api/infrastructure/internal/log"
-	"go-arch-template/internal/api/infrastructure/internal/trace"
+	"go-arch-template/internal/api/infrastructure/local/log"
+	"go-arch-template/internal/api/infrastructure/local/trace"
 
 	"go-arch-template/internal/api/domain/user"
 	"go-arch-template/internal/api/integration"

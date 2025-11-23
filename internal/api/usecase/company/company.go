@@ -3,8 +3,8 @@ package company
 import (
 	"context"
 	"go-arch-template/internal/api/domain/company"
-	"go-arch-template/internal/api/infrastructure/internal/log"
-	"go-arch-template/internal/api/infrastructure/internal/trace"
+	"go-arch-template/internal/api/infrastructure/local/log"
+	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
 	companyRepo "go-arch-template/internal/api/repository/company"
 	"go-arch-template/internal/api/validator"
