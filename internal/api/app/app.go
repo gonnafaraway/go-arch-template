@@ -30,6 +30,7 @@ func Run() error {
 	}
 
 	// usecases section
+	//api usecases
 	companyUseCase, err := prepareCompanyUseCase(repo.CompanyRepository)
 	if err != nil {
 		return err
@@ -43,15 +44,48 @@ func Run() error {
 		return err
 	}
 
-	// domains section
-
-	// services section
-	apiService, err := service.PrepareAPIService(env)
+	//jobs usecases
+	emailCheckerUseCase, err := prepareEmailCheckerUseCase(env)
 	if err != nil {
 		return err
 	}
 
-	jobsService, err := service.PrepareJobsService(env)
+	// domains section
+	//api domains
+	companyDomain, err := prepareCompanyDomain(companyUseCase)
+	if err != nil {
+		return err
+	}
+	orderDomain, err := prepareOrderDomain(orderUseCase)
+	if err != nil {
+		return err
+	}
+	userDomain, err := prepareUserDomain(userUseCase)
+	if err != nil {
+		return err
+	}
+
+	//jobs domains
+	emailCheckerDomain, err := prepareEmailCheckerDomain(emailCheckerUseCase)
+	if err != nil {
+		return err
+	}
+
+	// services section
+	apiService, err := service.PrepareAPIService(
+		env,
+		companyDomain,
+		orderDomain,
+		userDomain
+		)
+	if err != nil {
+		return err
+	}
+
+	jobsService, err := service.PrepareJobsService(
+		env,
+		emailCheckerDomain,
+		)
 	if err != nil {
 		return err
 	}
