@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"go-arch-template/internal/api/transport/http/middleware"
 	"go-arch-template/internal/api/usecase"
 )
 
@@ -23,6 +24,9 @@ func NewServer(port string, companyUseCase *usecase.CompanyUseCase, userUseCase 
 
 	mux := http.NewServeMux()
 	
+	// Prometheus metrics endpoint
+	mux.Handle("/metrics", middleware.PrometheusHandler())
+	
 	// Company routes
 	mux.HandleFunc("/api/companies", ch.HandleCompanies)
 	mux.HandleFunc("/api/companies/", ch.HandleCompany)
@@ -35,10 +39,13 @@ func NewServer(port string, companyUseCase *usecase.CompanyUseCase, userUseCase 
 	mux.HandleFunc("/api/orders", oh.HandleOrders)
 	mux.HandleFunc("/api/orders/", oh.HandleOrder)
 	mux.HandleFunc("/api/orders/confirm/", oh.HandleConfirmOrder)
+	
+	// Apply middleware chain
+	handler := middleware.SentryMiddleware()(middleware.PrometheusMiddleware(mux))
 
 	httpServer := &http.Server{
 		Addr:         ":" + port,
-		Handler:      mux,
+		Handler:      handler,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,

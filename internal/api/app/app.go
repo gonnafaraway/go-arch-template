@@ -1,12 +1,14 @@
 package app
 
 import (
+	"context"
 	"os"
 
 	"go-arch-template/internal/api/integration"
 	companyRepo "go-arch-template/internal/api/repository/company"
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
+	"go-arch-template/internal/api/observability"
 	"go-arch-template/internal/api/service"
 	"go-arch-template/internal/api/storage"
 	"go-arch-template/internal/api/usecase"
@@ -29,6 +31,20 @@ func Run() error {
 		return err
 	}
 
+	// observability sections
+	logger, err := observability.NewLogger()
+	if err != nil {
+		// Fallback на простой logger
+		logger = observability.NewFallbackLogger()
+	}
+
+	tracer, err := observability.NewTracer("go-arch-template")
+	if err != nil {
+		// Fallback на noop tracer
+		tracer = observability.NewNoopTracer()
+	}
+	defer tracer.Shutdown(context.Background())
+
 	// storage sections
 	storages, err := storage.PrepareStorage(env)
 	if err != nil {
@@ -49,21 +65,21 @@ func Run() error {
 
 	// usecases section
 	//api usecases
-	companyUseCase, err := prepareCompanyUseCase(repo.CompanyRepository, integrations.CompanyIntegration)
+	companyUseCase, err := prepareCompanyUseCase(repo.CompanyRepository, integrations.CompanyIntegration, logger, tracer)
 	if err != nil {
 		return err
 	}
-	orderUseCase, err := prepareOrderUseCase(repo.OrderRepository, repo.UserRepository, integrations.BillingIntegration)
+	orderUseCase, err := prepareOrderUseCase(repo.OrderRepository, repo.UserRepository, integrations.BillingIntegration, logger, tracer)
 	if err != nil {
 		return err
 	}
-	userUseCase, err := prepareUserUseCase(repo.UserRepository, integrations.CompanyIntegration)
+	userUseCase, err := prepareUserUseCase(repo.UserRepository, integrations.CompanyIntegration, logger, tracer)
 	if err != nil {
 		return err
 	}
 
 	//jobs usecases
-	emailCheckerUseCase, err := prepareEmailCheckerUseCase(env, integrations.CompanyIntegration)
+	emailCheckerUseCase, err := prepareEmailCheckerUseCase(env, integrations.CompanyIntegration, logger, tracer)
 	if err != nil {
 		return err
 	}
@@ -116,26 +132,67 @@ func prepareEnv() (*service.Env, error) {
 }
 
 func prepareRepository(storage *storage.Storage) (*Repositories, error) {
-	return &Repositories{
-		CompanyRepository: companyRepo.NewMockRepository(),
-		UserRepository:    userRepo.NewMockRepository(),
-		OrderRepository:   orderRepo.NewMockRepository(),
-	}, nil
+	repos := &Repositories{}
+
+	// Используем реальные репозитории если storage доступен, иначе моки
+	if storage.Postgres != nil {
+		repos.CompanyRepository = companyRepo.NewPostgresRepository(storage.Postgres)
+		// Можно добавить другие репозитории для PostgreSQL
+	} else if storage.MongoDB != nil {
+		repos.CompanyRepository = companyRepo.NewMongoDBRepository(storage.MongoDB)
+		// Можно добавить другие репозитории для MongoDB
+	} else {
+		// Fallback на моки
+		repos.CompanyRepository = companyRepo.NewMockRepository()
+		repos.UserRepository = userRepo.NewMockRepository()
+		repos.OrderRepository = orderRepo.NewMockRepository()
+	}
+
+	// Если не были установлены, используем моки
+	if repos.UserRepository == nil {
+		repos.UserRepository = userRepo.NewMockRepository()
+	}
+	if repos.OrderRepository == nil {
+		repos.OrderRepository = orderRepo.NewMockRepository()
+	}
+
+	return repos, nil
 }
 
-func prepareCompanyUseCase(repo companyRepo.Repository, companyIntegration integration.CompanyIntegration) (*usecase.CompanyUseCase, error) {
-	return usecase.NewCompanyUseCase(repo, companyIntegration), nil
+func prepareCompanyUseCase(
+	repo companyRepo.Repository,
+	companyIntegration integration.CompanyIntegration,
+	logger observability.Logger,
+	tracer observability.Tracer,
+) (*usecase.CompanyUseCase, error) {
+	return usecase.NewCompanyUseCase(repo, companyIntegration, logger, tracer), nil
 }
 
-func prepareOrderUseCase(orderRepo orderRepo.Repository, userRepo userRepo.Repository, billingIntegration integration.BillingIntegration) (*usecase.OrderUseCase, error) {
-	return usecase.NewOrderUseCase(orderRepo, userRepo, billingIntegration), nil
+func prepareOrderUseCase(
+	orderRepo orderRepo.Repository,
+	userRepo userRepo.Repository,
+	billingIntegration integration.BillingIntegration,
+	logger observability.Logger,
+	tracer observability.Tracer,
+) (*usecase.OrderUseCase, error) {
+	return usecase.NewOrderUseCase(orderRepo, userRepo, billingIntegration, logger, tracer), nil
 }
 
-func prepareUserUseCase(repo userRepo.Repository, companyIntegration integration.CompanyIntegration) (*usecase.UserUseCase, error) {
-	return usecase.NewUserUseCase(repo, companyIntegration), nil
+func prepareUserUseCase(
+	repo userRepo.Repository,
+	companyIntegration integration.CompanyIntegration,
+	logger observability.Logger,
+	tracer observability.Tracer,
+) (*usecase.UserUseCase, error) {
+	return usecase.NewUserUseCase(repo, companyIntegration, logger, tracer), nil
 }
 
-func prepareEmailCheckerUseCase(env *service.Env, companyIntegration integration.CompanyIntegration) (interface{}, error) {
+func prepareEmailCheckerUseCase(
+	env *service.Env,
+	companyIntegration integration.CompanyIntegration,
+	logger observability.Logger,
+	tracer observability.Tracer,
+) (interface{}, error) {
 	// Мок для email checker usecase
 	return struct{}{}, nil
 }

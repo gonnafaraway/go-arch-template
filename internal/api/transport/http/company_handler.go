@@ -8,6 +8,20 @@ import (
 	"go-arch-template/internal/api/usecase"
 )
 
+// HandleCompanies handles company list and creation
+// @Summary List or create companies
+// @Description Get list of all companies or create a new company
+// @Tags companies
+// @Accept json
+// @Produce json
+// @Param company body usecase.CreateCompanyRequest false "Company data"
+// @Success 200 {array} usecase.CompanyResponse "List of companies"
+// @Success 201 {object} usecase.CompanyResponse "Created company"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/companies [get]
+// @Router /api/companies [post]
+
 type CompanyHandler struct {
 	useCase *usecase.CompanyUseCase
 }
@@ -48,6 +62,16 @@ func (h *CompanyHandler) HandleCompanies(w http.ResponseWriter, r *http.Request)
 	}
 }
 
+// HandleCompany handles single company operations
+// @Summary Get company by ID
+// @Description Get company information by ID
+// @Tags companies
+// @Produce json
+// @Param id path string true "Company ID"
+// @Success 200 {object} usecase.CompanyResponse "Company information"
+// @Failure 404 {object} map[string]string "Company not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/companies/{id} [get]
 func (h *CompanyHandler) HandleCompany(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id := strings.TrimPrefix(r.URL.Path, "/api/companies/")

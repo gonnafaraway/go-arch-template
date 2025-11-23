@@ -7,17 +7,27 @@ import (
 	"go-arch-template/internal/api/domain/user"
 	userRepo "go-arch-template/internal/api/repository/user"
 	"go-arch-template/internal/api/integration"
+	"go-arch-template/internal/api/observability"
 )
 
 type UserUseCase struct {
 	repo              userRepo.Repository
 	companyIntegration integration.CompanyIntegration
+	logger            observability.Logger
+	tracer            observability.Tracer
 }
 
-func NewUserUseCase(repo userRepo.Repository, companyIntegration integration.CompanyIntegration) *UserUseCase {
+func NewUserUseCase(
+	repo userRepo.Repository,
+	companyIntegration integration.CompanyIntegration,
+	logger observability.Logger,
+	tracer observability.Tracer,
+) *UserUseCase {
 	return &UserUseCase{
 		repo:              repo,
 		companyIntegration: companyIntegration,
+		logger:            logger,
+		tracer:            tracer,
 	}
 }
 
@@ -37,19 +47,30 @@ type UserResponse struct {
 }
 
 func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*UserResponse, error) {
+	ctx, span := uc.tracer.Start(ctx, "UserUseCase.CreateUser")
+	defer span.End()
+
+	uc.logger.Info(ctx, "Creating user", observability.Field{Key: "email", Value: req.Email})
+
 	// Валидация компании через интеграцию
 	valid, err := uc.companyIntegration.ValidateCompany(ctx, req.CompanyID)
 	if err != nil {
+		uc.logger.Error(ctx, "Failed to validate company", err, observability.Field{Key: "company_id", Value: req.CompanyID})
 		return nil, err
 	}
 	if !valid {
+		uc.logger.Warn(ctx, "Invalid company", observability.Field{Key: "company_id", Value: req.CompanyID})
 		return nil, errors.New("invalid company")
 	}
 	
 	u := user.NewUser(req.Name, req.Email, req.CompanyID)
 	if err := uc.repo.Create(ctx, u); err != nil {
+		uc.logger.Error(ctx, "Failed to create user", err, observability.Field{Key: "email", Value: req.Email})
 		return nil, err
 	}
+
+	uc.logger.Info(ctx, "User created successfully", observability.Field{Key: "user_id", Value: u.ID})
+
 	return &UserResponse{
 		ID:        u.ID,
 		Name:      u.Name,

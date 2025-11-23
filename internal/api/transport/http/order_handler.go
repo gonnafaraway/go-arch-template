@@ -8,6 +8,18 @@ import (
 	"go-arch-template/internal/api/usecase"
 )
 
+// HandleOrders handles order creation
+// @Summary Create order
+// @Description Create a new order
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Param order body usecase.CreateOrderCommand true "Order data"
+// @Success 201 {object} usecase.CreateOrderResponse "Created order"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/orders [post]
+
 type OrderHandler struct {
 	useCase *usecase.OrderUseCase
 }
@@ -40,6 +52,16 @@ func (h *OrderHandler) HandleOrders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HandleOrder handles single order operations
+// @Summary Get order by ID
+// @Description Get order information by ID
+// @Tags orders
+// @Produce json
+// @Param id path string true "Order ID"
+// @Success 200 {object} usecase.OrderResponse "Order information"
+// @Failure 404 {object} map[string]string "Order not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/orders/{id} [get]
 func (h *OrderHandler) HandleOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id := strings.TrimPrefix(r.URL.Path, "/api/orders/")
@@ -58,6 +80,16 @@ func (h *OrderHandler) HandleOrder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// HandleConfirmOrder handles order confirmation
+// @Summary Confirm order
+// @Description Confirm an existing order
+// @Tags orders
+// @Produce json
+// @Param id path string true "Order ID"
+// @Success 200 {object} map[string]string "Order confirmed"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /api/orders/confirm/{id} [post]
 func (h *OrderHandler) HandleConfirmOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id := strings.TrimPrefix(r.URL.Path, "/api/orders/confirm/")

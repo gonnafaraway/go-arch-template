@@ -6,17 +6,27 @@ import (
 	"go-arch-template/internal/api/domain/company"
 	companyRepo "go-arch-template/internal/api/repository/company"
 	"go-arch-template/internal/api/integration"
+	"go-arch-template/internal/api/observability"
 )
 
 type CompanyUseCase struct {
 	repo              companyRepo.Repository
 	companyIntegration integration.CompanyIntegration
+	logger            observability.Logger
+	tracer            observability.Tracer
 }
 
-func NewCompanyUseCase(repo companyRepo.Repository, companyIntegration integration.CompanyIntegration) *CompanyUseCase {
+func NewCompanyUseCase(
+	repo companyRepo.Repository,
+	companyIntegration integration.CompanyIntegration,
+	logger observability.Logger,
+	tracer observability.Tracer,
+) *CompanyUseCase {
 	return &CompanyUseCase{
 		repo:              repo,
 		companyIntegration: companyIntegration,
+		logger:            logger,
+		tracer:            tracer,
 	}
 }
 
@@ -34,17 +44,24 @@ type CompanyResponse struct {
 }
 
 func (uc *CompanyUseCase) CreateCompany(ctx context.Context, req CreateCompanyRequest) (*CompanyResponse, error) {
+	ctx, span := uc.tracer.Start(ctx, "CompanyUseCase.CreateCompany")
+	defer span.End()
+
+	uc.logger.Info(ctx, "Creating company", observability.Field{Key: "name", Value: req.Name})
+
 	c := company.NewCompany(req.Name, req.Email)
 	if err := uc.repo.Create(ctx, c); err != nil {
+		uc.logger.Error(ctx, "Failed to create company", err, observability.Field{Key: "name", Value: req.Name})
 		return nil, err
 	}
 	
 	// Синхронизация с внешним сервисом
 	if err := uc.companyIntegration.SyncCompany(ctx, c.ID); err != nil {
-		// Логируем ошибку, но не прерываем выполнение
-		_ = err
+		uc.logger.Warn(ctx, "Failed to sync company", observability.Field{Key: "company_id", Value: c.ID}, observability.Field{Key: "error", Value: err.Error()})
 	}
 	
+	uc.logger.Info(ctx, "Company created successfully", observability.Field{Key: "company_id", Value: c.ID})
+
 	return &CompanyResponse{
 		ID:        c.ID,
 		Name:      c.Name,

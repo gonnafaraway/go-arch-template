@@ -8,6 +8,7 @@ import (
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
 	"go-arch-template/internal/api/integration"
+	"go-arch-template/internal/api/observability"
 )
 
 type CreateOrderCommand struct {
@@ -42,27 +43,40 @@ type OrderUseCase struct {
 	orderRepo          orderRepo.Repository
 	userRepo           userRepo.Repository
 	billingIntegration integration.BillingIntegration
+	logger             observability.Logger
+	tracer             observability.Tracer
 }
 
 func NewOrderUseCase(
 	orderRepo orderRepo.Repository,
 	userRepo userRepo.Repository,
 	billingIntegration integration.BillingIntegration,
+	logger observability.Logger,
+	tracer observability.Tracer,
 ) *OrderUseCase {
 	return &OrderUseCase{
 		orderRepo:          orderRepo,
 		userRepo:           userRepo,
 		billingIntegration: billingIntegration,
+		logger:             logger,
+		tracer:             tracer,
 	}
 }
 
 func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand) (*CreateOrderResponse, error) {
+	ctx, span := uc.tracer.Start(ctx, "OrderUseCase.CreateOrder")
+	defer span.End()
+
+	uc.logger.Info(ctx, "Creating order", observability.Field{Key: "user_id", Value: cmd.UserID})
+
 	// 1. Валидация пользователя
 	userExists, err := uc.userRepo.Exists(ctx, cmd.UserID)
 	if err != nil {
+		uc.logger.Error(ctx, "Failed to check user existence", err, observability.Field{Key: "user_id", Value: cmd.UserID})
 		return nil, err
 	}
 	if !userExists {
+		uc.logger.Warn(ctx, "User not found", observability.Field{Key: "user_id", Value: cmd.UserID})
 		return nil, errors.New("user not found")
 	}
 
@@ -86,20 +100,25 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 	// 3. Создание заказа
 	o, err := order.NewOrder(cmd.UserID, orderItems)
 	if err != nil {
+		uc.logger.Error(ctx, "Failed to create order entity", err)
 		return nil, err
 	}
 
 	// 4. Сохранение
 	if err := uc.orderRepo.Save(ctx, o); err != nil {
+		uc.logger.Error(ctx, "Failed to save order", err, observability.Field{Key: "order_id", Value: o.ID})
 		return nil, err
 	}
 
 	// 5. Создание инвойса через billing интеграцию
-	_, err = uc.billingIntegration.CreateInvoice(ctx, o.ID, o.Total, cmd.UserID)
+	invoiceID, err := uc.billingIntegration.CreateInvoice(ctx, o.ID, o.Total, cmd.UserID)
 	if err != nil {
-		// Логируем ошибку, но не прерываем выполнение
-		_ = err
+		uc.logger.Warn(ctx, "Failed to create invoice", observability.Field{Key: "order_id", Value: o.ID}, observability.Field{Key: "error", Value: err.Error()})
+	} else {
+		uc.logger.Info(ctx, "Invoice created", observability.Field{Key: "invoice_id", Value: invoiceID}, observability.Field{Key: "order_id", Value: o.ID})
 	}
+
+	uc.logger.Info(ctx, "Order created successfully", observability.Field{Key: "order_id", Value: o.ID}, observability.Field{Key: "total", Value: o.Total})
 
 	return &CreateOrderResponse{
 		OrderID: o.ID,

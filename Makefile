@@ -13,7 +13,7 @@ swagger-install:
 	go install github.com/go-swagger/go-swagger/cmd/swagger@latest
 
 swagger-generate:
-	swag init --parseInternal -g main.go -o docs/ -d .
+	swag init -g cmd/api/main.go -o docs/api/openapi
 
 swagger-validate:
 	swagger validate docs/swagger.yaml
