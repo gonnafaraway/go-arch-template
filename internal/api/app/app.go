@@ -2,6 +2,7 @@ package app
 
 import (
 	"go-arch-template/internal/api/service"
+	"go-arch-template/internal/api/storage"
 	http3 "go-arch-template/internal/api/transport/http"
 )
 
@@ -18,7 +19,7 @@ func Run() error {
 	}
 
 	// storage sections
-	storage, err := prepareStorage(env)
+	storage, err := storage.PrepareStorage(env)
 	if err != nil {
 		return err
 	}
