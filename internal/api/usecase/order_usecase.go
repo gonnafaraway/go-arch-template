@@ -4,45 +4,51 @@ import (
 	"context"
 	"errors"
 
-	"go-arch-template/domain/entity"
-	"go-arch-template/ports/eventhandler"
-	"go-arch-template/ports/repository"
+	"go-arch-template/internal/api/domain/order"
+	orderRepo "go-arch-template/internal/api/repository/order"
+	userRepo "go-arch-template/internal/api/repository/user"
 )
 
 type CreateOrderCommand struct {
-	UserID string
-	Items  []OrderItemRequest
+	UserID string            `json:"user_id"`
+	Items  []OrderItemRequest `json:"items"`
 }
 
 type OrderItemRequest struct {
-	ProductID string
-	Quantity  int
+	ProductID string  `json:"product_id"`
+	Name      string  `json:"name"`
+	Quantity  int     `json:"quantity"`
+	Price     float64 `json:"price"`
 }
 
 type CreateOrderResponse struct {
-	OrderID string
-	Total   string
-	Status  string
+	OrderID string  `json:"order_id"`
+	Total   float64 `json:"total"`
+	Status  string  `json:"status"`
+}
+
+type OrderResponse struct {
+	ID        string          `json:"id"`
+	UserID    string          `json:"user_id"`
+	Items     []order.OrderItem `json:"items"`
+	Total     float64         `json:"total"`
+	Status    string          `json:"status"`
+	CreatedAt string          `json:"created_at"`
+	UpdatedAt string          `json:"updated_at"`
 }
 
 type OrderUseCase struct {
-	orderRepo    repository.OrderRepository
-	userRepo     repository.UserRepository
-	productRepo  repository.ProductProductRepository
-	eventHandler eventhandler.EventHandler
+	orderRepo orderRepo.Repository
+	userRepo  userRepo.Repository
 }
 
 func NewOrderUseCase(
-	orderRepo repository.OrderRepository,
-	userRepo repository.UserRepository,
-	productRepo repository.ProductRepository,
-	eventHandler eventhandler.EventHandler,
+	orderRepo orderRepo.Repository,
+	userRepo userRepo.Repository,
 ) *OrderUseCase {
 	return &OrderUseCase{
-		orderRepo:    orderRepo,
-		userRepo:     userRepo,
-		productRepo:  productRepo,
-		eventHandler: eventHandler,
+		orderRepo: orderRepo,
+		userRepo:  userRepo,
 	}
 }
 
@@ -56,80 +62,90 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		return nil, errors.New("user not found")
 	}
 
-	// 2. Получение информации о товарах
-	productIDs := make([]string, len(cmd.Items))
+	// 2. Создание Order Items
+	orderItems := make([]order.OrderItem, len(cmd.Items))
 	for i, item := range cmd.Items {
-		productIDs[i] = item.ProductID
-	}
-
-	products, err := uc.productRepo.FindByIDs(ctx, productIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	// 3. Создание Order Items
-	orderItems := make([]entity.OrderItem, len(cmd.Items))
-	for i, item := range cmd.Items {
-		product, exists := products[item.ProductID]
-		if !exists {
-			return nil, errors.New("product not found: " + item.ProductID)
+		if item.Quantity <= 0 {
+			return nil, errors.New("invalid quantity")
 		}
-
-		orderItems[i] = entity.OrderItem{
-			ProductID: product.ID,
-			Name:      product.Name,
+		if item.Price < 0 {
+			return nil, errors.New("invalid price")
+		}
+		orderItems[i] = order.OrderItem{
+			ProductID: item.ProductID,
+			Name:      item.Name,
 			Quantity:  item.Quantity,
-			Price:     product.Price,
+			Price:     item.Price,
 		}
 	}
 
-	// 4. Создание заказа
-	order, err := entity.NewOrder(cmd.UserID, orderItems)
+	// 3. Создание заказа
+	o, err := order.NewOrder(cmd.UserID, orderItems)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. Сохранение
-	if err := uc.orderRepo.Save(ctx, order); err != nil {
+	// 4. Сохранение
+	if err := uc.orderRepo.Save(ctx, o); err != nil {
 		return nil, err
-	}
-
-	// 6. Обработка доменных событий
-	events := order.GetEvents()
-	for _, e := range events {
-		if err := uc.eventHandler.Handle(ctx, e); err != nil {
-			// Логируем ошибку, но не прерываем выполнение
-			// В реальном приложении нужно ретраи и dead letter queue
-			uc.eventHandler.HandleError(ctx, e, err)
-		}
 	}
 
 	return &CreateOrderResponse{
-		OrderID: order.ID,
-		Total:   order.Total.String(),
-		Status:  string(order.Status),
+		OrderID: o.ID,
+		Total:   o.Total,
+		Status:  string(o.Status),
+	}, nil
+}
+
+func (uc *OrderUseCase) GetOrder(ctx context.Context, orderID string) (*OrderResponse, error) {
+	o, err := uc.orderRepo.FindByID(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+	return &OrderResponse{
+		ID:        o.ID,
+		UserID:    o.UserID,
+		Items:     o.Items,
+		Total:     o.Total,
+		Status:    string(o.Status),
+		CreatedAt: o.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt: o.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}, nil
 }
 
 func (uc *OrderUseCase) ConfirmOrder(ctx context.Context, orderID string) error {
-	order, err := uc.orderRepo.FindByID(ctx, orderID)
+	o, err := uc.orderRepo.FindByID(ctx, orderID)
 	if err != nil {
 		return err
 	}
 
-	if err := order.Confirm(); err != nil {
+	if err := o.Confirm(); err != nil {
 		return err
 	}
 
-	if err := uc.orderRepo.Update(ctx, order); err != nil {
+	if err := uc.orderRepo.Update(ctx, o); err != nil {
 		return err
-	}
-
-	// Обработка событий подтверждения
-	events := order.GetEvents()
-	for _, e := range events {
-		uc.eventHandler.Handle(ctx, e)
 	}
 
 	return nil
+}
+
+func (uc *OrderUseCase) ListOrdersByUser(ctx context.Context, userID string) ([]*OrderResponse, error) {
+	orders, err := uc.orderRepo.FindByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*OrderResponse, len(orders))
+	for i, o := range orders {
+		result[i] = &OrderResponse{
+			ID:        o.ID,
+			UserID:    o.UserID,
+			Items:     o.Items,
+			Total:     o.Total,
+			Status:    string(o.Status),
+			CreatedAt: o.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt: o.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+	}
+	return result, nil
 }

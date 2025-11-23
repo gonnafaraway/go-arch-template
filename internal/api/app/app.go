@@ -1,14 +1,24 @@
 package app
 
 import (
+	"os"
+
+	companyRepo "go-arch-template/internal/api/repository/company"
+	orderRepo "go-arch-template/internal/api/repository/order"
+	userRepo "go-arch-template/internal/api/repository/user"
 	"go-arch-template/internal/api/service"
 	"go-arch-template/internal/api/storage"
-	http3 "go-arch-template/internal/api/transport/http"
+	"go-arch-template/internal/api/usecase"
 )
 
 type Application struct {
-	OrderHandler *http3.OrderHandler
-	// другие хендлеры...
+	// Можно добавить поля для управления приложением
+}
+
+type Repositories struct {
+	CompanyRepository companyRepo.Repository
+	UserRepository    userRepo.Repository
+	OrderRepository   orderRepo.Repository
 }
 
 func Run() error {
@@ -19,13 +29,14 @@ func Run() error {
 	}
 
 	// storage sections
-	storage, err := storage.PrepareStorage(env)
+	stor, err := storage.PrepareStorage(env)
 	if err != nil {
 		return err
 	}
+	_ = stor // Используем моки, поэтому storage пока не нужен
 
 	// repositories sections
-	repo, err := prepareRepository(storage)
+	repo, err := prepareRepository()
 	if err != nil {
 		return err
 	}
@@ -36,7 +47,7 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	orderUseCase, err := prepareOrderUseCase(repo.OrderRepository)
+	orderUseCase, err := prepareOrderUseCase(repo.OrderRepository, repo.UserRepository)
 	if err != nil {
 		return err
 	}
@@ -51,42 +62,21 @@ func Run() error {
 		return err
 	}
 
-	// domains section
-	//api domains
-	companyDomain, err := prepareCompanyDomain(companyUseCase)
-	if err != nil {
-		return err
-	}
-	orderDomain, err := prepareOrderDomain(orderUseCase)
-	if err != nil {
-		return err
-	}
-	userDomain, err := prepareUserDomain(userUseCase)
-	if err != nil {
-		return err
-	}
-
-	//jobs domains
-	emailCheckerDomain, err := prepareEmailCheckerDomain(emailCheckerUseCase)
-	if err != nil {
-		return err
-	}
-
 	// services section
 	apiService, err := service.PrepareAPIService(
 		env,
-		companyDomain,
-		orderDomain,
-		userDomain
-		)
+		companyUseCase,
+		userUseCase,
+		orderUseCase,
+	)
 	if err != nil {
 		return err
 	}
 
 	jobsService, err := service.PrepareJobsService(
 		env,
-		emailCheckerDomain,
-		)
+		emailCheckerUseCase,
+	)
 	if err != nil {
 		return err
 	}
@@ -107,4 +97,39 @@ func Run() error {
 	}
 
 	return nil
+}
+
+func prepareEnv() (*service.Env, error) {
+	port := os.Getenv("HTTP_PORT")
+	if port == "" {
+		port = "8080"
+	}
+	return &service.Env{
+		HTTPPort: port,
+	}, nil
+}
+
+func prepareRepository() (*Repositories, error) {
+	return &Repositories{
+		CompanyRepository: companyRepo.NewMockRepository(),
+		UserRepository:    userRepo.NewMockRepository(),
+		OrderRepository:   orderRepo.NewMockRepository(),
+	}, nil
+}
+
+func prepareCompanyUseCase(repo companyRepo.Repository) (*usecase.CompanyUseCase, error) {
+	return usecase.NewCompanyUseCase(repo), nil
+}
+
+func prepareOrderUseCase(orderRepo orderRepo.Repository, userRepo userRepo.Repository) (*usecase.OrderUseCase, error) {
+	return usecase.NewOrderUseCase(orderRepo, userRepo), nil
+}
+
+func prepareUserUseCase(repo userRepo.Repository) (*usecase.UserUseCase, error) {
+	return usecase.NewUserUseCase(repo), nil
+}
+
+func prepareEmailCheckerUseCase(env *service.Env) (interface{}, error) {
+	// Мок для email checker usecase
+	return struct{}{}, nil
 }

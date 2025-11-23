@@ -1,23 +1,26 @@
-package company
+package user
 
 import (
 	"time"
 )
 
-type Company struct {
+type User struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
+	CompanyID string    `json:"company_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func NewCompany(name, email string) *Company {
+func NewUser(name, email, companyID string) *User {
 	now := time.Now()
-	return &Company{
+	return &User{
 		Name:      name,
 		Email:     email,
+		CompanyID: companyID,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 }
+
