@@ -37,12 +37,16 @@ func (h *OrderHandler) HandleOrders(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var cmd usecase.CreateOrderCommand
 		if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			respondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
 		}
 		order, err := h.useCase.CreateOrder(ctx, cmd)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			if isValidationError(err) {
+				respondError(w, http.StatusBadRequest, "validation failed", err)
+			} else {
+				respondError(w, http.StatusInternalServerError, "failed to create order", err)
+			}
 			return
 		}
 		respondJSON(w, http.StatusCreated, order)

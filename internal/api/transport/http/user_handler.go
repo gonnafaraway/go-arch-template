@@ -47,12 +47,16 @@ func (h *UserHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var req usecase.CreateUserRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			respondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
 		}
 		user, err := h.useCase.CreateUser(ctx, req)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			if isValidationError(err) {
+				respondError(w, http.StatusBadRequest, "validation failed", err)
+			} else {
+				respondError(w, http.StatusInternalServerError, "failed to create user", err)
+			}
 			return
 		}
 		respondJSON(w, http.StatusCreated, user)

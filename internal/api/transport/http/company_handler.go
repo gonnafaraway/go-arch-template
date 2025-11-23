@@ -47,12 +47,17 @@ func (h *CompanyHandler) HandleCompanies(w http.ResponseWriter, r *http.Request)
 	case http.MethodPost:
 		var req usecase.CreateCompanyRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			respondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
 		}
 		company, err := h.useCase.CreateCompany(ctx, req)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			// Проверяем тип ошибки для правильного статус кода
+			if isValidationError(err) {
+				respondError(w, http.StatusBadRequest, "validation failed", err)
+			} else {
+				respondError(w, http.StatusInternalServerError, "failed to create company", err)
+			}
 			return
 		}
 		respondJSON(w, http.StatusCreated, company)

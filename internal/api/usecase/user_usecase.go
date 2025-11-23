@@ -8,6 +8,7 @@ import (
 	userRepo "go-arch-template/internal/api/repository/user"
 	"go-arch-template/internal/api/integration"
 	"go-arch-template/internal/api/observability"
+	"go-arch-template/internal/api/validator"
 )
 
 type UserUseCase struct {
@@ -15,6 +16,7 @@ type UserUseCase struct {
 	companyIntegration integration.CompanyIntegration
 	logger            observability.Logger
 	tracer            observability.Tracer
+	validators        *validator.UserValidators
 }
 
 func NewUserUseCase(
@@ -22,12 +24,14 @@ func NewUserUseCase(
 	companyIntegration integration.CompanyIntegration,
 	logger observability.Logger,
 	tracer observability.Tracer,
+	validators *validator.UserValidators,
 ) *UserUseCase {
 	return &UserUseCase{
 		repo:              repo,
 		companyIntegration: companyIntegration,
 		logger:            logger,
 		tracer:            tracer,
+		validators:        validators,
 	}
 }
 
@@ -52,6 +56,17 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*
 
 	uc.logger.Info(ctx, "Creating user", observability.Field{Key: "email", Value: req.Email})
 
+	// Валидация запроса
+	validatorReq := &validator.CreateUserRequest{
+		Name:      req.Name,
+		Email:     req.Email,
+		CompanyID: req.CompanyID,
+	}
+	if err := uc.validators.Request.ValidateCreateRequest(ctx, validatorReq); err != nil {
+		uc.logger.Warn(ctx, "Request validation failed", observability.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
 	// Валидация компании через интеграцию
 	valid, err := uc.companyIntegration.ValidateCompany(ctx, req.CompanyID)
 	if err != nil {
@@ -63,7 +78,15 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*
 		return nil, errors.New("invalid company")
 	}
 	
+	// Создание доменной сущности
 	u := user.NewUser(req.Name, req.Email, req.CompanyID)
+
+	// Валидация доменной сущности
+	if err := uc.validators.Domain.Validate(ctx, u); err != nil {
+		uc.logger.Warn(ctx, "Domain validation failed", observability.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
 	if err := uc.repo.Create(ctx, u); err != nil {
 		uc.logger.Error(ctx, "Failed to create user", err, observability.Field{Key: "email", Value: req.Email})
 		return nil, err

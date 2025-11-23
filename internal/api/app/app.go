@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"go-arch-template/internal/api/integration"
+	"go-arch-template/internal/api/observability"
 	companyRepo "go-arch-template/internal/api/repository/company"
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
-	"go-arch-template/internal/api/observability"
 	"go-arch-template/internal/api/service"
 	"go-arch-template/internal/api/storage"
 	"go-arch-template/internal/api/usecase"
@@ -165,7 +165,11 @@ func prepareCompanyUseCase(
 	logger observability.Logger,
 	tracer observability.Tracer,
 ) (*usecase.CompanyUseCase, error) {
-	return usecase.NewCompanyUseCase(repo, companyIntegration, logger, tracer), nil
+	validators, err := prepareCompanyValidators()
+	if err != nil {
+		return nil, err
+	}
+	return usecase.NewCompanyUseCase(repo, companyIntegration, logger, tracer, validators), nil
 }
 
 func prepareOrderUseCase(
@@ -175,7 +179,11 @@ func prepareOrderUseCase(
 	logger observability.Logger,
 	tracer observability.Tracer,
 ) (*usecase.OrderUseCase, error) {
-	return usecase.NewOrderUseCase(orderRepo, userRepo, billingIntegration, logger, tracer), nil
+	validators, err := prepareOrderValidators()
+	if err != nil {
+		return nil, err
+	}
+	return usecase.NewOrderUseCase(orderRepo, userRepo, billingIntegration, logger, tracer, validators), nil
 }
 
 func prepareUserUseCase(
@@ -184,7 +192,11 @@ func prepareUserUseCase(
 	logger observability.Logger,
 	tracer observability.Tracer,
 ) (*usecase.UserUseCase, error) {
-	return usecase.NewUserUseCase(repo, companyIntegration, logger, tracer), nil
+	validators, err := prepareUserValidators()
+	if err != nil {
+		return nil, err
+	}
+	return usecase.NewUserUseCase(repo, companyIntegration, logger, tracer, validators), nil
 }
 
 func prepareEmailCheckerUseCase(

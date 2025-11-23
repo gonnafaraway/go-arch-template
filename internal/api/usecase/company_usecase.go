@@ -4,16 +4,18 @@ import (
 	"context"
 
 	"go-arch-template/internal/api/domain/company"
-	companyRepo "go-arch-template/internal/api/repository/company"
 	"go-arch-template/internal/api/integration"
 	"go-arch-template/internal/api/observability"
+	companyRepo "go-arch-template/internal/api/repository/company"
+	"go-arch-template/internal/api/validator"
 )
 
 type CompanyUseCase struct {
-	repo              companyRepo.Repository
+	repo               companyRepo.Repository
 	companyIntegration integration.CompanyIntegration
-	logger            observability.Logger
-	tracer            observability.Tracer
+	logger             observability.Logger
+	tracer             observability.Tracer
+	validators         *validator.CompanyValidators
 }
 
 func NewCompanyUseCase(
@@ -21,12 +23,14 @@ func NewCompanyUseCase(
 	companyIntegration integration.CompanyIntegration,
 	logger observability.Logger,
 	tracer observability.Tracer,
+	validators *validator.CompanyValidators,
 ) *CompanyUseCase {
 	return &CompanyUseCase{
-		repo:              repo,
+		repo:               repo,
 		companyIntegration: companyIntegration,
-		logger:            logger,
-		tracer:            tracer,
+		logger:             logger,
+		tracer:             tracer,
+		validators:         validators,
 	}
 }
 
@@ -49,17 +53,35 @@ func (uc *CompanyUseCase) CreateCompany(ctx context.Context, req CreateCompanyRe
 
 	uc.logger.Info(ctx, "Creating company", observability.Field{Key: "name", Value: req.Name})
 
+	// Валидация запроса
+	validatorReq := &validator.CreateCompanyRequest{
+		Name:  req.Name,
+		Email: req.Email,
+	}
+	if err := uc.validators.Request.ValidateCreateRequest(ctx, validatorReq); err != nil {
+		uc.logger.Warn(ctx, "Request validation failed", observability.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
+	// Создание доменной сущности
 	c := company.NewCompany(req.Name, req.Email)
+
+	// Валидация доменной сущности
+	if err := uc.validators.Domain.Validate(ctx, c); err != nil {
+		uc.logger.Warn(ctx, "Domain validation failed", observability.Field{Key: "error", Value: err.Error()})
+		return nil, err
+	}
+
 	if err := uc.repo.Create(ctx, c); err != nil {
 		uc.logger.Error(ctx, "Failed to create company", err, observability.Field{Key: "name", Value: req.Name})
 		return nil, err
 	}
-	
+
 	// Синхронизация с внешним сервисом
 	if err := uc.companyIntegration.SyncCompany(ctx, c.ID); err != nil {
 		uc.logger.Warn(ctx, "Failed to sync company", observability.Field{Key: "company_id", Value: c.ID}, observability.Field{Key: "error", Value: err.Error()})
 	}
-	
+
 	uc.logger.Info(ctx, "Company created successfully", observability.Field{Key: "company_id", Value: c.ID})
 
 	return &CompanyResponse{
@@ -102,4 +124,3 @@ func (uc *CompanyUseCase) ListCompanies(ctx context.Context) ([]*CompanyResponse
 	}
 	return result, nil
 }
-
