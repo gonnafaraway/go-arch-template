@@ -11,21 +11,25 @@ type Application struct {
 }
 
 func Run() error {
+	// env sections
 	env, err := prepareEnv()
 	if err != nil {
 		return err
 	}
 
+	// storage sections
 	storage, err := prepareStorage(env)
 	if err != nil {
 		return err
 	}
 
+	// repositories sections
 	repo, err := prepareRepository(storage)
 	if err != nil {
 		return err
 	}
 
+	// usecases section
 	companyUseCase, err := prepareCompanyUseCase(repo.CompanyRepository)
 	if err != nil {
 		return err
@@ -39,6 +43,9 @@ func Run() error {
 		return err
 	}
 
+	// domains section
+
+	// services section
 	apiService, err := service.PrepareAPIService(env)
 	if err != nil {
 		return err
@@ -54,6 +61,7 @@ func Run() error {
 		return err
 	}
 
+	// run app section
 	err = service.RunServices(
 		apiService,
 		jobsService,
