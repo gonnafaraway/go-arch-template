@@ -1,2 +1,7 @@
 /.idea/go-arch-template.iml
 /.idea/vcs.xml
+/.idea/dataSources.local.xml
+/.idea/dataSources.xml
+/.idea/modules.xml
+/.idea/sqldialects.xml
+/.idea/workspace.xml
