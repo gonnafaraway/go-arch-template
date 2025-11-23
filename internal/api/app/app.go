@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 
+	"go-arch-template/internal/api/integration"
 	companyRepo "go-arch-template/internal/api/repository/company"
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
@@ -29,35 +30,40 @@ func Run() error {
 	}
 
 	// storage sections
-	stor, err := storage.PrepareStorage(env)
+	storages, err := storage.PrepareStorage(env)
 	if err != nil {
 		return err
 	}
-	_ = stor // Используем моки, поэтому storage пока не нужен
+
+	// integrations sections
+	integrations, err := integration.PrepareIntegration(env)
+	if err != nil {
+		return err
+	}
 
 	// repositories sections
-	repo, err := prepareRepository()
+	repo, err := prepareRepository(storages)
 	if err != nil {
 		return err
 	}
 
 	// usecases section
 	//api usecases
-	companyUseCase, err := prepareCompanyUseCase(repo.CompanyRepository)
+	companyUseCase, err := prepareCompanyUseCase(repo.CompanyRepository, integrations.CompanyIntegration)
 	if err != nil {
 		return err
 	}
-	orderUseCase, err := prepareOrderUseCase(repo.OrderRepository, repo.UserRepository)
+	orderUseCase, err := prepareOrderUseCase(repo.OrderRepository, repo.UserRepository, integrations.BillingIntegration)
 	if err != nil {
 		return err
 	}
-	userUseCase, err := prepareUserUseCase(repo.UserRepository)
+	userUseCase, err := prepareUserUseCase(repo.UserRepository, integrations.CompanyIntegration)
 	if err != nil {
 		return err
 	}
 
 	//jobs usecases
-	emailCheckerUseCase, err := prepareEmailCheckerUseCase(env)
+	emailCheckerUseCase, err := prepareEmailCheckerUseCase(env, integrations.CompanyIntegration)
 	if err != nil {
 		return err
 	}
@@ -109,7 +115,7 @@ func prepareEnv() (*service.Env, error) {
 	}, nil
 }
 
-func prepareRepository() (*Repositories, error) {
+func prepareRepository(storage *storage.Storage) (*Repositories, error) {
 	return &Repositories{
 		CompanyRepository: companyRepo.NewMockRepository(),
 		UserRepository:    userRepo.NewMockRepository(),
@@ -117,19 +123,19 @@ func prepareRepository() (*Repositories, error) {
 	}, nil
 }
 
-func prepareCompanyUseCase(repo companyRepo.Repository) (*usecase.CompanyUseCase, error) {
-	return usecase.NewCompanyUseCase(repo), nil
+func prepareCompanyUseCase(repo companyRepo.Repository, companyIntegration integration.CompanyIntegration) (*usecase.CompanyUseCase, error) {
+	return usecase.NewCompanyUseCase(repo, companyIntegration), nil
 }
 
-func prepareOrderUseCase(orderRepo orderRepo.Repository, userRepo userRepo.Repository) (*usecase.OrderUseCase, error) {
-	return usecase.NewOrderUseCase(orderRepo, userRepo), nil
+func prepareOrderUseCase(orderRepo orderRepo.Repository, userRepo userRepo.Repository, billingIntegration integration.BillingIntegration) (*usecase.OrderUseCase, error) {
+	return usecase.NewOrderUseCase(orderRepo, userRepo, billingIntegration), nil
 }
 
-func prepareUserUseCase(repo userRepo.Repository) (*usecase.UserUseCase, error) {
-	return usecase.NewUserUseCase(repo), nil
+func prepareUserUseCase(repo userRepo.Repository, companyIntegration integration.CompanyIntegration) (*usecase.UserUseCase, error) {
+	return usecase.NewUserUseCase(repo, companyIntegration), nil
 }
 
-func prepareEmailCheckerUseCase(env *service.Env) (interface{}, error) {
+func prepareEmailCheckerUseCase(env *service.Env, companyIntegration integration.CompanyIntegration) (interface{}, error) {
 	// Мок для email checker usecase
 	return struct{}{}, nil
 }

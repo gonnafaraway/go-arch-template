@@ -7,6 +7,7 @@ import (
 	"go-arch-template/internal/api/domain/order"
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
+	"go-arch-template/internal/api/integration"
 )
 
 type CreateOrderCommand struct {
@@ -38,17 +39,20 @@ type OrderResponse struct {
 }
 
 type OrderUseCase struct {
-	orderRepo orderRepo.Repository
-	userRepo  userRepo.Repository
+	orderRepo          orderRepo.Repository
+	userRepo           userRepo.Repository
+	billingIntegration integration.BillingIntegration
 }
 
 func NewOrderUseCase(
 	orderRepo orderRepo.Repository,
 	userRepo userRepo.Repository,
+	billingIntegration integration.BillingIntegration,
 ) *OrderUseCase {
 	return &OrderUseCase{
-		orderRepo: orderRepo,
-		userRepo:  userRepo,
+		orderRepo:          orderRepo,
+		userRepo:           userRepo,
+		billingIntegration: billingIntegration,
 	}
 }
 
@@ -90,6 +94,13 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		return nil, err
 	}
 
+	// 5. Создание инвойса через billing интеграцию
+	_, err = uc.billingIntegration.CreateInvoice(ctx, o.ID, o.Total, cmd.UserID)
+	if err != nil {
+		// Логируем ошибку, но не прерываем выполнение
+		_ = err
+	}
+
 	return &CreateOrderResponse{
 		OrderID: o.ID,
 		Total:   o.Total,
@@ -126,6 +137,10 @@ func (uc *OrderUseCase) ConfirmOrder(ctx context.Context, orderID string) error 
 	if err := uc.orderRepo.Update(ctx, o); err != nil {
 		return err
 	}
+
+	// После подтверждения заказа можно обновить статус инвойса
+	// Это пример использования интеграции
+	_ = uc.billingIntegration
 
 	return nil
 }

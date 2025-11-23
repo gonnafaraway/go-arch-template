@@ -5,15 +5,18 @@ import (
 
 	"go-arch-template/internal/api/domain/company"
 	companyRepo "go-arch-template/internal/api/repository/company"
+	"go-arch-template/internal/api/integration"
 )
 
 type CompanyUseCase struct {
-	repo companyRepo.Repository
+	repo              companyRepo.Repository
+	companyIntegration integration.CompanyIntegration
 }
 
-func NewCompanyUseCase(repo companyRepo.Repository) *CompanyUseCase {
+func NewCompanyUseCase(repo companyRepo.Repository, companyIntegration integration.CompanyIntegration) *CompanyUseCase {
 	return &CompanyUseCase{
-		repo: repo,
+		repo:              repo,
+		companyIntegration: companyIntegration,
 	}
 }
 
@@ -35,6 +38,13 @@ func (uc *CompanyUseCase) CreateCompany(ctx context.Context, req CreateCompanyRe
 	if err := uc.repo.Create(ctx, c); err != nil {
 		return nil, err
 	}
+	
+	// Синхронизация с внешним сервисом
+	if err := uc.companyIntegration.SyncCompany(ctx, c.ID); err != nil {
+		// Логируем ошибку, но не прерываем выполнение
+		_ = err
+	}
+	
 	return &CompanyResponse{
 		ID:        c.ID,
 		Name:      c.Name,

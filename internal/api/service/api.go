@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 
+	"go-arch-template/internal/api/transport/http"
 	"go-arch-template/internal/api/usecase"
-	httpTransport "go-arch-template/internal/api/transport/http"
 )
 
 type API struct {
-	server  *httpTransport.Server
-	env     *Env
+	server *http.Server
+	env    *Env
 }
 
 func PrepareAPIService(
@@ -24,7 +24,7 @@ func PrepareAPIService(
 		port = "8080"
 	}
 
-	server := httpTransport.NewServer(port, companyUseCase, userUseCase, orderUseCase)
+	server := http.NewServer(port, companyUseCase, userUseCase, orderUseCase)
 
 	return &API{
 		server: server,

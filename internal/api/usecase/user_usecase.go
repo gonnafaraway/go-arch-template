@@ -2,18 +2,22 @@ package usecase
 
 import (
 	"context"
+	"errors"
 
 	"go-arch-template/internal/api/domain/user"
 	userRepo "go-arch-template/internal/api/repository/user"
+	"go-arch-template/internal/api/integration"
 )
 
 type UserUseCase struct {
-	repo userRepo.Repository
+	repo              userRepo.Repository
+	companyIntegration integration.CompanyIntegration
 }
 
-func NewUserUseCase(repo userRepo.Repository) *UserUseCase {
+func NewUserUseCase(repo userRepo.Repository, companyIntegration integration.CompanyIntegration) *UserUseCase {
 	return &UserUseCase{
-		repo: repo,
+		repo:              repo,
+		companyIntegration: companyIntegration,
 	}
 }
 
@@ -33,6 +37,15 @@ type UserResponse struct {
 }
 
 func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*UserResponse, error) {
+	// Валидация компании через интеграцию
+	valid, err := uc.companyIntegration.ValidateCompany(ctx, req.CompanyID)
+	if err != nil {
+		return nil, err
+	}
+	if !valid {
+		return nil, errors.New("invalid company")
+	}
+	
 	u := user.NewUser(req.Name, req.Email, req.CompanyID)
 	if err := uc.repo.Create(ctx, u); err != nil {
 		return nil, err
