@@ -3,7 +3,9 @@ package storage
 type Model interface {
 }
 
-type StorageImpl struct {
+type Storage struct {
 }
 
-func PrepareStorage() *StorageImpl {}
+func PrepareStorage() (*Storage, error) {
+	return &Storage{}, nil
+}
