@@ -2,6 +2,7 @@ package validator
 
 import (
 	"context"
+	"go-arch-template/internal/api/domain/user"
 )
 
 // CreateUserRequest структура запроса для валидации
@@ -49,3 +50,9 @@ func (v *UserRequestValidator) ValidateCreateRequest(ctx context.Context, req *C
 	return nil
 }
 
+func PrepareUserValidators() (*UserValidators, error) {
+	return &UserValidators{
+		Domain:  user.NewDomainValidator(),
+		Request: NewUserRequestValidator(),
+	}, nil
+}

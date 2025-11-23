@@ -2,10 +2,9 @@ package http
 
 import (
 	"encoding/json"
+	"go-arch-template/internal/api/usecase/order"
 	"net/http"
 	"strings"
-
-	"go-arch-template/internal/api/usecase"
 )
 
 // HandleOrders handles order creation
@@ -21,10 +20,10 @@ import (
 // @Router /api/orders [post]
 
 type OrderHandler struct {
-	useCase *usecase.OrderUseCase
+	useCase *order.OrderUseCase
 }
 
-func NewOrderHandler(useCase *usecase.OrderUseCase) *OrderHandler {
+func NewOrderHandler(useCase *order.OrderUseCase) *OrderHandler {
 	return &OrderHandler{
 		useCase: useCase,
 	}
@@ -35,7 +34,7 @@ func (h *OrderHandler) HandleOrders(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		var cmd usecase.CreateOrderCommand
+		var cmd order.CreateOrderCommand
 		if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
 			respondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
@@ -110,4 +109,3 @@ func (h *OrderHandler) HandleConfirmOrder(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-

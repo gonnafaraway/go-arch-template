@@ -2,6 +2,7 @@ package validator
 
 import (
 	"context"
+	"go-arch-template/internal/api/domain/company"
 )
 
 // CreateCompanyRequest структура запроса для валидации
@@ -43,3 +44,9 @@ func (v *CompanyRequestValidator) ValidateCreateRequest(ctx context.Context, req
 	return nil
 }
 
+func PrepareCompanyValidators() (*CompanyValidators, error) {
+	return &CompanyValidators{
+		Domain:  company.NewDomainValidator(),
+		Request: NewCompanyRequestValidator(),
+	}, nil
+}

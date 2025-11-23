@@ -4,27 +4,30 @@ import (
 	"context"
 	"log"
 
+	"go-arch-template/internal/api/env"
 	"go-arch-template/internal/api/transport/http"
-	"go-arch-template/internal/api/usecase"
+	companyUseCase "go-arch-template/internal/api/usecase/company"
+	"go-arch-template/internal/api/usecase/order"
+	"go-arch-template/internal/api/usecase/user"
 )
 
 type API struct {
 	server *http.Server
-	env    *Env
+	env    *env.Env
 }
 
 func PrepareAPIService(
-	env *Env,
-	companyUseCase *usecase.CompanyUseCase,
-	userUseCase *usecase.UserUseCase,
-	orderUseCase *usecase.OrderUseCase,
+	env *env.Env,
+	companyUC *companyUseCase.CompanyUseCase,
+	userUC *user.UserUseCase,
+	orderUC *order.OrderUseCase,
 ) (*API, error) {
 	port := env.HTTPPort
 	if port == "" {
 		port = "8080"
 	}
 
-	server := http.NewServer(port, companyUseCase, userUseCase, orderUseCase)
+	server := http.NewServer(port, companyUC, userUC, orderUC)
 
 	return &API{
 		server: server,

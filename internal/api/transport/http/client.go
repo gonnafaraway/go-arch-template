@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"go-arch-template/internal/api/transport/http/middleware"
-	"go-arch-template/internal/api/usecase"
+	companyUseCase "go-arch-template/internal/api/usecase/company"
+	"go-arch-template/internal/api/usecase/order"
+	"go-arch-template/internal/api/usecase/user"
 )
 
 type Server struct {
@@ -17,29 +19,29 @@ type Server struct {
 	orderHandler   *OrderHandler
 }
 
-func NewServer(port string, companyUseCase *usecase.CompanyUseCase, userUseCase *usecase.UserUseCase, orderUseCase *usecase.OrderUseCase) *Server {
-	ch := NewCompanyHandler(companyUseCase)
-	uh := NewUserHandler(userUseCase)
-	oh := NewOrderHandler(orderUseCase)
+func NewServer(port string, companyUC *companyUseCase.CompanyUseCase, userUC *user.UserUseCase, orderUC *order.OrderUseCase) *Server {
+	ch := NewCompanyHandler(companyUC)
+	uh := NewUserHandler(userUC)
+	oh := NewOrderHandler(orderUC)
 
 	mux := http.NewServeMux()
-	
+
 	// Prometheus metrics endpoint
 	mux.Handle("/metrics", middleware.PrometheusHandler())
-	
+
 	// Company routes
 	mux.HandleFunc("/api/companies", ch.HandleCompanies)
 	mux.HandleFunc("/api/companies/", ch.HandleCompany)
-	
+
 	// User routes
 	mux.HandleFunc("/api/users", uh.HandleUsers)
 	mux.HandleFunc("/api/users/", uh.HandleUser)
-	
+
 	// Order routes
 	mux.HandleFunc("/api/orders", oh.HandleOrders)
 	mux.HandleFunc("/api/orders/", oh.HandleOrder)
 	mux.HandleFunc("/api/orders/confirm/", oh.HandleConfirmOrder)
-	
+
 	// Apply middleware chain
 	handler := middleware.SentryMiddleware()(middleware.PrometheusMiddleware(mux))
 
@@ -52,7 +54,7 @@ func NewServer(port string, companyUseCase *usecase.CompanyUseCase, userUseCase 
 	}
 
 	return &Server{
-		httpServer:    httpServer,
+		httpServer:     httpServer,
 		companyHandler: ch,
 		userHandler:    uh,
 		orderHandler:   oh,

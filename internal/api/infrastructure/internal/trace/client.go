@@ -1,4 +1,4 @@
-package observability
+package trace
 
 import (
 	"context"
@@ -102,4 +102,3 @@ func (t *noopTracer) Start(ctx context.Context, spanName string, opts ...trace.S
 func (t *noopTracer) Shutdown(ctx context.Context) error {
 	return nil
 }
-

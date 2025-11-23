@@ -1,19 +1,19 @@
 package storage
 
 import (
+	"go-arch-template/internal/api/env"
 	"os"
 
 	mongodb "go-arch-template/internal/api/storage/mongodb"
 	postgres "go-arch-template/internal/api/storage/postgres"
-	"go-arch-template/internal/api/service"
 )
 
 type Storage struct {
-	MongoDB *mongodb.Client
+	MongoDB  *mongodb.Client
 	Postgres *postgres.Client
 }
 
-func PrepareStorage(env *service.Env) (*Storage, error) {
+func PrepareStorage(env *env.Env) (*Storage, error) {
 	storage := &Storage{}
 
 	// Инициализация MongoDB если указан URI

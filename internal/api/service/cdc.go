@@ -3,13 +3,15 @@ package service
 import (
 	"context"
 	"log"
+
+	"go-arch-template/internal/api/env"
 )
 
 type CDC struct {
-	env *Env
+	env *env.Env
 }
 
-func PrepareCDCService(env *Env) (*CDC, error) {
+func PrepareCDCService(env *env.Env) (*CDC, error) {
 	return &CDC{
 		env: env,
 	}, nil

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"go-arch-template/internal/api/usecase"
+	"go-arch-template/internal/api/usecase/company"
 )
 
 // HandleCompanies handles company list and creation
@@ -14,19 +14,19 @@ import (
 // @Tags companies
 // @Accept json
 // @Produce json
-// @Param company body usecase.CreateCompanyRequest false "Company data"
-// @Success 200 {array} usecase.CompanyResponse "List of companies"
-// @Success 201 {object} usecase.CompanyResponse "Created company"
+// @Param company body company.CreateCompanyRequest false "Company data"
+// @Success 200 {array} company.CompanyResponse "List of companies"
+// @Success 201 {object} company.CompanyResponse "Created company"
 // @Failure 400 {object} map[string]string "Bad request"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/companies [get]
 // @Router /api/companies [post]
 
 type CompanyHandler struct {
-	useCase *usecase.CompanyUseCase
+	useCase *company.CompanyUseCase
 }
 
-func NewCompanyHandler(useCase *usecase.CompanyUseCase) *CompanyHandler {
+func NewCompanyHandler(useCase *company.CompanyUseCase) *CompanyHandler {
 	return &CompanyHandler{
 		useCase: useCase,
 	}
@@ -45,12 +45,12 @@ func (h *CompanyHandler) HandleCompanies(w http.ResponseWriter, r *http.Request)
 		respondJSON(w, http.StatusOK, companies)
 
 	case http.MethodPost:
-		var req usecase.CreateCompanyRequest
+		var req company.CreateCompanyRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			respondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
 		}
-		company, err := h.useCase.CreateCompany(ctx, req)
+		companyResp, err := h.useCase.CreateCompany(ctx, req)
 		if err != nil {
 			// Проверяем тип ошибки для правильного статус кода
 			if isValidationError(err) {
@@ -60,7 +60,7 @@ func (h *CompanyHandler) HandleCompanies(w http.ResponseWriter, r *http.Request)
 			}
 			return
 		}
-		respondJSON(w, http.StatusCreated, company)
+		respondJSON(w, http.StatusCreated, companyResp)
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -73,7 +73,7 @@ func (h *CompanyHandler) HandleCompanies(w http.ResponseWriter, r *http.Request)
 // @Tags companies
 // @Produce json
 // @Param id path string true "Company ID"
-// @Success 200 {object} usecase.CompanyResponse "Company information"
+// @Success 200 {object} company.CompanyResponse "Company information"
 // @Failure 404 {object} map[string]string "Company not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/companies/{id} [get]
@@ -83,15 +83,14 @@ func (h *CompanyHandler) HandleCompany(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		company, err := h.useCase.GetCompany(ctx, id)
+		companyResp, err := h.useCase.GetCompany(ctx, id)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		respondJSON(w, http.StatusOK, company)
+		respondJSON(w, http.StatusOK, companyResp)
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-

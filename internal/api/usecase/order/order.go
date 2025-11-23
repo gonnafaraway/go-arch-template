@@ -1,19 +1,20 @@
-package usecase
+package order
 
 import (
 	"context"
 	"errors"
+	"go-arch-template/internal/api/infrastructure/internal/log"
+	"go-arch-template/internal/api/infrastructure/internal/trace"
 
 	"go-arch-template/internal/api/domain/order"
+	"go-arch-template/internal/api/integration"
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
-	"go-arch-template/internal/api/integration"
-	"go-arch-template/internal/api/observability"
 	"go-arch-template/internal/api/validator"
 )
 
 type CreateOrderCommand struct {
-	UserID string            `json:"user_id"`
+	UserID string             `json:"user_id"`
 	Items  []OrderItemRequest `json:"items"`
 }
 
@@ -31,21 +32,21 @@ type CreateOrderResponse struct {
 }
 
 type OrderResponse struct {
-	ID        string          `json:"id"`
-	UserID    string          `json:"user_id"`
+	ID        string            `json:"id"`
+	UserID    string            `json:"user_id"`
 	Items     []order.OrderItem `json:"items"`
-	Total     float64         `json:"total"`
-	Status    string          `json:"status"`
-	CreatedAt string          `json:"created_at"`
-	UpdatedAt string          `json:"updated_at"`
+	Total     float64           `json:"total"`
+	Status    string            `json:"status"`
+	CreatedAt string            `json:"created_at"`
+	UpdatedAt string            `json:"updated_at"`
 }
 
 type OrderUseCase struct {
 	orderRepo          orderRepo.Repository
 	userRepo           userRepo.Repository
 	billingIntegration integration.BillingIntegration
-	logger             observability.Logger
-	tracer             observability.Tracer
+	logger             log.Logger
+	tracer             trace.Tracer
 	validators         *validator.OrderValidators
 }
 
@@ -53,8 +54,8 @@ func NewOrderUseCase(
 	orderRepo orderRepo.Repository,
 	userRepo userRepo.Repository,
 	billingIntegration integration.BillingIntegration,
-	logger observability.Logger,
-	tracer observability.Tracer,
+	logger log.Logger,
+	tracer trace.Tracer,
 	validators *validator.OrderValidators,
 ) *OrderUseCase {
 	return &OrderUseCase{
@@ -71,7 +72,7 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 	ctx, span := uc.tracer.Start(ctx, "OrderUseCase.CreateOrder")
 	defer span.End()
 
-	uc.logger.Info(ctx, "Creating order", observability.Field{Key: "user_id", Value: cmd.UserID})
+	uc.logger.Info(ctx, "Creating order", log.Field{Key: "user_id", Value: cmd.UserID})
 
 	// 1. Валидация запроса
 	validatorItems := make([]validator.OrderItemRequest, len(cmd.Items))
@@ -88,18 +89,18 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		Items:  validatorItems,
 	}
 	if err := uc.validators.Request.ValidateCreateRequest(ctx, validatorReq); err != nil {
-		uc.logger.Warn(ctx, "Request validation failed", observability.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Request validation failed", log.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
 	// 2. Валидация пользователя
 	userExists, err := uc.userRepo.Exists(ctx, cmd.UserID)
 	if err != nil {
-		uc.logger.Error(ctx, "Failed to check user existence", err, observability.Field{Key: "user_id", Value: cmd.UserID})
+		uc.logger.Error(ctx, "Failed to check user existence", err, log.Field{Key: "user_id", Value: cmd.UserID})
 		return nil, err
 	}
 	if !userExists {
-		uc.logger.Warn(ctx, "User not found", observability.Field{Key: "user_id", Value: cmd.UserID})
+		uc.logger.Warn(ctx, "User not found", log.Field{Key: "user_id", Value: cmd.UserID})
 		return nil, errors.New("user not found")
 	}
 
@@ -123,25 +124,25 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 
 	// 5. Валидация доменной сущности
 	if err := uc.validators.Domain.Validate(ctx, o); err != nil {
-		uc.logger.Warn(ctx, "Domain validation failed", observability.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Domain validation failed", log.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
 	// 6. Сохранение
 	if err := uc.orderRepo.Save(ctx, o); err != nil {
-		uc.logger.Error(ctx, "Failed to save order", err, observability.Field{Key: "order_id", Value: o.ID})
+		uc.logger.Error(ctx, "Failed to save order", err, log.Field{Key: "order_id", Value: o.ID})
 		return nil, err
 	}
 
 	// 7. Создание инвойса через billing интеграцию
 	invoiceID, err := uc.billingIntegration.CreateInvoice(ctx, o.ID, o.Total, cmd.UserID)
 	if err != nil {
-		uc.logger.Warn(ctx, "Failed to create invoice", observability.Field{Key: "order_id", Value: o.ID}, observability.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Failed to create invoice", log.Field{Key: "order_id", Value: o.ID}, log.Field{Key: "error", Value: err.Error()})
 	} else {
-		uc.logger.Info(ctx, "Invoice created", observability.Field{Key: "invoice_id", Value: invoiceID}, observability.Field{Key: "order_id", Value: o.ID})
+		uc.logger.Info(ctx, "Invoice created", log.Field{Key: "invoice_id", Value: invoiceID}, log.Field{Key: "order_id", Value: o.ID})
 	}
 
-	uc.logger.Info(ctx, "Order created successfully", observability.Field{Key: "order_id", Value: o.ID}, observability.Field{Key: "total", Value: o.Total})
+	uc.logger.Info(ctx, "Order created successfully", log.Field{Key: "order_id", Value: o.ID}, log.Field{Key: "total", Value: o.Total})
 
 	return &CreateOrderResponse{
 		OrderID: o.ID,
@@ -205,4 +206,18 @@ func (uc *OrderUseCase) ListOrdersByUser(ctx context.Context, userID string) ([]
 		}
 	}
 	return result, nil
+}
+
+func PrepareOrderUseCase(
+	orderRepo orderRepo.Repository,
+	userRepo userRepo.Repository,
+	billingIntegration integration.BillingIntegration,
+	logger log.Logger,
+	tracer trace.Tracer,
+) (*OrderUseCase, error) {
+	validators, err := validator.PrepareOrderValidators()
+	if err != nil {
+		return nil, err
+	}
+	return NewOrderUseCase(orderRepo, userRepo, billingIntegration, logger, tracer, validators), nil
 }

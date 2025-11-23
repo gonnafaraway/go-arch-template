@@ -1,4 +1,4 @@
-package observability
+package log
 
 import (
 	"context"
@@ -110,4 +110,3 @@ func (l *fallbackLogger) Debug(ctx context.Context, msg string, fields ...Field)
 func (l *fallbackLogger) With(fields ...Field) Logger {
 	return l
 }
-

@@ -2,10 +2,9 @@ package http
 
 import (
 	"encoding/json"
+	"go-arch-template/internal/api/usecase/user"
 	"net/http"
 	"strings"
-
-	"go-arch-template/internal/api/usecase"
 )
 
 // HandleUsers handles user list and creation
@@ -23,10 +22,10 @@ import (
 // @Router /api/users [post]
 
 type UserHandler struct {
-	useCase *usecase.UserUseCase
+	useCase *user.UserUseCase
 }
 
-func NewUserHandler(useCase *usecase.UserUseCase) *UserHandler {
+func NewUserHandler(useCase *user.UserUseCase) *UserHandler {
 	return &UserHandler{
 		useCase: useCase,
 	}
@@ -45,7 +44,7 @@ func (h *UserHandler) HandleUsers(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, http.StatusOK, users)
 
 	case http.MethodPost:
-		var req usecase.CreateUserRequest
+		var req user.CreateUserRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			respondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
@@ -93,4 +92,3 @@ func (h *UserHandler) HandleUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-

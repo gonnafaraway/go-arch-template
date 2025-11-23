@@ -4,13 +4,15 @@ import (
 	"context"
 	"log"
 	"time"
+
+	"go-arch-template/internal/api/env"
 )
 
 type Jobs struct {
-	env *Env
+	env *env.Env
 }
 
-func PrepareJobsService(env *Env, emailCheckerDomain interface{}) (*Jobs, error) {
+func PrepareJobsService(env *env.Env, emailCheckerDomain interface{}) (*Jobs, error) {
 	return &Jobs{
 		env: env,
 	}, nil

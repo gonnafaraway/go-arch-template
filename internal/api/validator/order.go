@@ -3,6 +3,7 @@ package validator
 import (
 	"context"
 	"fmt"
+	"go-arch-template/internal/api/domain/order"
 )
 
 // OrderItemRequest структура элемента заказа для валидации
@@ -15,7 +16,7 @@ type OrderItemRequest struct {
 
 // CreateOrderRequest структура запроса для валидации
 type CreateOrderRequest struct {
-	UserID string            `json:"user_id"`
+	UserID string             `json:"user_id"`
 	Items  []OrderItemRequest `json:"items"`
 }
 
@@ -63,3 +64,9 @@ func (v *OrderRequestValidator) ValidateCreateRequest(ctx context.Context, req *
 	return nil
 }
 
+func PrepareOrderValidators() (*OrderValidators, error) {
+	return &OrderValidators{
+		Domain:  order.NewDomainValidator(),
+		Request: NewOrderRequestValidator(),
+	}, nil
+}
