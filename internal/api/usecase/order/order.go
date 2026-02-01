@@ -3,14 +3,15 @@ package order
 import (
 	"context"
 	"errors"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 
 	"go-arch-template/internal/api/domain/order"
+	"go-arch-template/internal/api/infrastructure/local/log"
+	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
+	"go-arch-template/internal/api/validator"
+
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
-	"go-arch-template/internal/api/validator"
 )
 
 type CreateOrderCommand struct {

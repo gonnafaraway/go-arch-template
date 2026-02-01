@@ -7,14 +7,14 @@ import (
 	"go-arch-template/internal/api/validator"
 )
 
-// isValidationError проверяет является ли ошибка ошибкой валидации
-func isValidationError(err error) bool {
+// IsValidationError проверяет является ли ошибка ошибкой валидации
+func IsValidationError(err error) bool {
 	_, ok := err.(*validator.ValidationErrors)
 	return ok
 }
 
-// respondError отправляет ошибку в формате JSON
-func respondError(w http.ResponseWriter, status int, message string, err error) {
+// RespondError отправляет ошибку в формате JSON
+func RespondError(w http.ResponseWriter, status int, message string, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
@@ -30,4 +30,3 @@ func respondError(w http.ResponseWriter, status int, message string, err error) 
 
 	json.NewEncoder(w).Encode(response)
 }
-

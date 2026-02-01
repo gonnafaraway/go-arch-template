@@ -9,7 +9,15 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -38,7 +46,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Company information",
                         "schema": {
-                            "$ref": "#/definitions/usecase.CompanyResponse"
+                            "$ref": "#/definitions/company.CompanyResponse"
                         }
                     },
                     "404": {
@@ -135,7 +143,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Order information",
                         "schema": {
-                            "$ref": "#/definitions/usecase.OrderResponse"
+                            "$ref": "#/definitions/order.OrderResponse"
                         }
                     },
                     "404": {
@@ -182,7 +190,7 @@ const docTemplate = `{
                     "200": {
                         "description": "User information",
                         "schema": {
-                            "$ref": "#/definitions/usecase.UserResponse"
+                            "$ref": "#/definitions/user.UserResponse"
                         }
                     },
                     "404": {
@@ -208,24 +216,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "order.OrderItem": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "number"
-                },
-                "product_id": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
-                }
-            }
-        },
-        "usecase.CompanyResponse": {
+        "company.CompanyResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -245,7 +236,24 @@ const docTemplate = `{
                 }
             }
         },
-        "usecase.OrderResponse": {
+        "order.OrderItem": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "order.OrderResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -274,7 +282,7 @@ const docTemplate = `{
                 }
             }
         },
-        "usecase.UserResponse": {
+        "user.UserResponse": {
             "type": "object",
             "properties": {
                 "company_id": {
@@ -302,12 +310,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/api",
+	Schemes:          []string{"http", "https"},
+	Title:            "Go Arch Template API",
+	Description:      "This is a sample server for Go Architecture Template",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

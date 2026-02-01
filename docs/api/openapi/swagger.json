@@ -1,8 +1,25 @@
 {
+    "schemes": [
+        "http",
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "This is a sample server for Go Architecture Template",
+        "title": "Go Arch Template API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/api",
     "paths": {
         "/api/companies/{id}": {
             "get": {
@@ -27,7 +44,7 @@
                     "200": {
                         "description": "Company information",
                         "schema": {
-                            "$ref": "#/definitions/usecase.CompanyResponse"
+                            "$ref": "#/definitions/company.CompanyResponse"
                         }
                     },
                     "404": {
@@ -124,7 +141,7 @@
                     "200": {
                         "description": "Order information",
                         "schema": {
-                            "$ref": "#/definitions/usecase.OrderResponse"
+                            "$ref": "#/definitions/order.OrderResponse"
                         }
                     },
                     "404": {
@@ -171,7 +188,7 @@
                     "200": {
                         "description": "User information",
                         "schema": {
-                            "$ref": "#/definitions/usecase.UserResponse"
+                            "$ref": "#/definitions/user.UserResponse"
                         }
                     },
                     "404": {
@@ -197,24 +214,7 @@
         }
     },
     "definitions": {
-        "order.OrderItem": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "price": {
-                    "type": "number"
-                },
-                "product_id": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
-                }
-            }
-        },
-        "usecase.CompanyResponse": {
+        "company.CompanyResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -234,7 +234,24 @@
                 }
             }
         },
-        "usecase.OrderResponse": {
+        "order.OrderItem": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "order.OrderResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -263,7 +280,7 @@
                 }
             }
         },
-        "usecase.UserResponse": {
+        "user.UserResponse": {
             "type": "object",
             "properties": {
                 "company_id": {

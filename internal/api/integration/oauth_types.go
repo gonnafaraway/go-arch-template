@@ -7,3 +7,4 @@ type UserInfo struct {
 	Company string `json:"company"`
 }
 
+

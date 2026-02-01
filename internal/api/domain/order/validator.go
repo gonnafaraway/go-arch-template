@@ -80,10 +80,10 @@ func (v *DomainValidator) Validate(ctx context.Context, o *Order) error {
 	}
 
 	// Валидация status
-	validStatuses := map[OrderStatus]bool{
-		OrderStatusPending:   true,
-		OrderStatusConfirmed: true,
-		OrderStatusCancelled: true,
+	validStatuses := map[Status]bool{
+		StatusPending:   true,
+		StatusConfirmed: true,
+		StatusCancelled: true,
 	}
 	if !validStatuses[o.Status] {
 		errs.Add("status", "invalid order status")
@@ -95,4 +95,3 @@ func (v *DomainValidator) Validate(ctx context.Context, o *Order) error {
 
 	return nil
 }
-

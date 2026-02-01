@@ -13,4 +13,3 @@ type Repository interface {
 	Update(ctx context.Context, o *order.Order) error
 	Delete(ctx context.Context, id string) error
 }
-

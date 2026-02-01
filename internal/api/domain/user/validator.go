@@ -83,4 +83,3 @@ func (v *DomainValidator) Validate(ctx context.Context, u *User) error {
 
 	return nil
 }
-

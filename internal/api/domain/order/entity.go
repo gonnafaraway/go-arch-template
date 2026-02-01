@@ -4,22 +4,22 @@ import (
 	"time"
 )
 
-type OrderStatus string
+type Status string
 
 const (
-	OrderStatusPending   OrderStatus = "pending"
-	OrderStatusConfirmed OrderStatus = "confirmed"
-	OrderStatusCancelled OrderStatus = "cancelled"
+	StatusPending   Status = "pending"
+	StatusConfirmed Status = "confirmed"
+	StatusCancelled Status = "cancelled"
 )
 
 type Order struct {
-	ID        string       `json:"id"`
-	UserID    string       `json:"user_id"`
-	Items     []OrderItem  `json:"items"`
-	Total     float64      `json:"total"`
-	Status    OrderStatus  `json:"status"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt time.Time    `json:"updated_at"`
+	ID        string      `json:"id"`
+	UserID    string      `json:"user_id"`
+	Items     []OrderItem `json:"items"`
+	Total     float64     `json:"total"`
+	Status    Status      `json:"status"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 type OrderItem struct {
@@ -53,27 +53,26 @@ func NewOrder(userID string, items []OrderItem) (*Order, error) {
 		UserID:    userID,
 		Items:     items,
 		Total:     total,
-		Status:    OrderStatusPending,
+		Status:    StatusPending,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}, nil
 }
 
 func (o *Order) Confirm() error {
-	if o.Status != OrderStatusPending {
+	if o.Status != StatusPending {
 		return ErrInvalidStatus
 	}
-	o.Status = OrderStatusConfirmed
+	o.Status = StatusConfirmed
 	o.UpdatedAt = time.Now()
 	return nil
 }
 
 func (o *Order) Cancel() error {
-	if o.Status == OrderStatusCancelled {
+	if o.Status == StatusCancelled {
 		return ErrInvalidStatus
 	}
-	o.Status = OrderStatusCancelled
+	o.Status = StatusCancelled
 	o.UpdatedAt = time.Now()
 	return nil
 }
-

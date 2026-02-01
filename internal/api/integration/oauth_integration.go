@@ -29,4 +29,3 @@ func (i *oauthIntegration) GetUserInfo(ctx context.Context, token string) (*User
 		Company: "Test Company",
 	}, nil
 }
-

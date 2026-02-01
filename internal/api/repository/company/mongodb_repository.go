@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go-arch-template/internal/api/domain/company"
-	mongodb "go-arch-template/internal/api/storage/mongodb"
+	"go-arch-template/internal/api/storage/mongodb"
 )
 
 type MongoDBRepository struct {
@@ -98,7 +98,7 @@ func (r *MongoDBRepository) FindAll(ctx context.Context) ([]*company.Company, er
 
 func (r *MongoDBRepository) Update(ctx context.Context, c *company.Company) error {
 	c.UpdatedAt = time.Now()
-	
+
 	update := bson.M{
 		"$set": bson.M{
 			"name":       c.Name,
@@ -129,4 +129,3 @@ func (r *MongoDBRepository) Delete(ctx context.Context, id string) error {
 
 	return nil
 }
-

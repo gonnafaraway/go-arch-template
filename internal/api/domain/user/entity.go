@@ -23,4 +23,3 @@ func NewUser(name, email, companyID string) *User {
 		UpdatedAt: now,
 	}
 }
-

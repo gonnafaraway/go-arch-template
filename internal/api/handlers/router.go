@@ -1,28 +1,34 @@
-package http
+package handlers
 
 import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
+	"go-arch-template/internal/api/handlers/company"
 	"go-arch-template/internal/api/transport/http/middleware"
-	companyUseCase "go-arch-template/internal/api/usecase/company"
 	"go-arch-template/internal/api/usecase/order"
 	"go-arch-template/internal/api/usecase/user"
+
+	orderhandler "go-arch-template/internal/api/handlers/order"
+	userhandler "go-arch-template/internal/api/handlers/user"
+	httptransport "go-arch-template/internal/api/transport/http"
+	companyUseCase "go-arch-template/internal/api/usecase/company"
 )
 
 type Server struct {
-	httpServer     *http.Server
-	companyHandler *CompanyHandler
-	userHandler    *UserHandler
-	orderHandler   *OrderHandler
+	httpServer *http.Server
 }
 
-func NewServer(port string, companyUC *companyUseCase.CompanyUseCase, userUC *user.UserUseCase, orderUC *order.OrderUseCase) *Server {
-	ch := NewCompanyHandler(companyUC)
-	uh := NewUserHandler(userUC)
-	oh := NewOrderHandler(orderUC)
+func NewServer(port string) *Server {
+	httpServer := httptransport.NewHTTPTransport(port)
+	return &Server{httpServer: httpServer}
+}
+
+func BindRoutes(server *Server, companyUC *companyUseCase.CompanyUseCase, userUC *user.UserUseCase, orderUC *order.OrderUseCase) {
+	ch := company.NewCompanyHandler(companyUC)
+	uh := userhandler.NewUserHandler(userUC)
+	oh := orderhandler.NewOrderHandler(orderUC)
 
 	mux := http.NewServeMux()
 
@@ -45,20 +51,7 @@ func NewServer(port string, companyUC *companyUseCase.CompanyUseCase, userUC *us
 	// Apply middleware chain
 	handler := middleware.SentryMiddleware()(middleware.PrometheusMiddleware(mux))
 
-	httpServer := &http.Server{
-		Addr:         ":" + port,
-		Handler:      handler,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
-	return &Server{
-		httpServer:     httpServer,
-		companyHandler: ch,
-		userHandler:    uh,
-		orderHandler:   oh,
-	}
+	server.httpServer.Handler = handler
 }
 
 func (s *Server) Run() error {

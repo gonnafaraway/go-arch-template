@@ -1,7 +1,8 @@
-package http
+package company
 
 import (
 	"encoding/json"
+	response "go-arch-template/internal/api/transport/http"
 	"net/http"
 	"strings"
 
@@ -42,25 +43,25 @@ func (h *CompanyHandler) HandleCompanies(w http.ResponseWriter, r *http.Request)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		respondJSON(w, http.StatusOK, companies)
+		response.RespondJSON(w, http.StatusOK, companies)
 
 	case http.MethodPost:
 		var req company.CreateCompanyRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			respondError(w, http.StatusBadRequest, "invalid request body", err)
+			response.RespondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
 		}
 		companyResp, err := h.useCase.CreateCompany(ctx, req)
 		if err != nil {
 			// Проверяем тип ошибки для правильного статус кода
-			if isValidationError(err) {
-				respondError(w, http.StatusBadRequest, "validation failed", err)
+			if response.IsValidationError(err) {
+				response.RespondError(w, http.StatusBadRequest, "validation failed", err)
 			} else {
-				respondError(w, http.StatusInternalServerError, "failed to create company", err)
+				response.RespondError(w, http.StatusInternalServerError, "failed to create company", err)
 			}
 			return
 		}
-		respondJSON(w, http.StatusCreated, companyResp)
+		response.RespondJSON(w, http.StatusCreated, companyResp)
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -88,7 +89,7 @@ func (h *CompanyHandler) HandleCompany(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		respondJSON(w, http.StatusOK, companyResp)
+		response.RespondJSON(w, http.StatusOK, companyResp)
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

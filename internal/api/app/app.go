@@ -2,16 +2,17 @@ package app
 
 import (
 	"context"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 
 	"go-arch-template/internal/api/env"
+	"go-arch-template/internal/api/infrastructure/local/log"
+	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
 	"go-arch-template/internal/api/repository"
 	"go-arch-template/internal/api/service"
 	"go-arch-template/internal/api/storage"
-	companyUseCase "go-arch-template/internal/api/usecase/company"
 	"go-arch-template/internal/api/usecase/email_checker"
+
+	companyUseCase "go-arch-template/internal/api/usecase/company"
 	orderUseCase "go-arch-template/internal/api/usecase/order"
 	userUseCase "go-arch-template/internal/api/usecase/user"
 )

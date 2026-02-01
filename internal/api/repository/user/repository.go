@@ -15,4 +15,3 @@ type Repository interface {
 	Update(ctx context.Context, u *user.User) error
 	Delete(ctx context.Context, id string) error
 }
-

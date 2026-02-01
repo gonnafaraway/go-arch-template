@@ -3,13 +3,14 @@ package user
 import (
 	"context"
 	"errors"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 
 	"go-arch-template/internal/api/domain/user"
+	"go-arch-template/internal/api/infrastructure/local/log"
+	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
-	userRepo "go-arch-template/internal/api/repository/user"
 	"go-arch-template/internal/api/validator"
+
+	userRepo "go-arch-template/internal/api/repository/user"
 )
 
 type UserUseCase struct {

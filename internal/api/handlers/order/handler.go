@@ -1,10 +1,13 @@
-package http
+package order
 
 import (
 	"encoding/json"
-	"go-arch-template/internal/api/usecase/order"
 	"net/http"
 	"strings"
+
+	"go-arch-template/internal/api/usecase/order"
+
+	httptransport "go-arch-template/internal/api/transport/http"
 )
 
 // HandleOrders handles order creation
@@ -13,8 +16,8 @@ import (
 // @Tags orders
 // @Accept json
 // @Produce json
-// @Param order body usecase.CreateOrderCommand true "Order data"
-// @Success 201 {object} usecase.CreateOrderResponse "Created order"
+// @Param order body order.CreateOrderCommand true "Order data"
+// @Success 201 {object} order.CreateOrderResponse "Created order"
 // @Failure 400 {object} map[string]string "Bad request"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/orders [post]
@@ -36,19 +39,19 @@ func (h *OrderHandler) HandleOrders(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		var cmd order.CreateOrderCommand
 		if err := json.NewDecoder(r.Body).Decode(&cmd); err != nil {
-			respondError(w, http.StatusBadRequest, "invalid request body", err)
+			httptransport.RespondError(w, http.StatusBadRequest, "invalid request body", err)
 			return
 		}
 		order, err := h.useCase.CreateOrder(ctx, cmd)
 		if err != nil {
-			if isValidationError(err) {
-				respondError(w, http.StatusBadRequest, "validation failed", err)
+			if httptransport.IsValidationError(err) {
+				httptransport.RespondError(w, http.StatusBadRequest, "validation failed", err)
 			} else {
-				respondError(w, http.StatusInternalServerError, "failed to create order", err)
+				httptransport.RespondError(w, http.StatusInternalServerError, "failed to create order", err)
 			}
 			return
 		}
-		respondJSON(w, http.StatusCreated, order)
+		httptransport.RespondJSON(w, http.StatusCreated, order)
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -61,7 +64,7 @@ func (h *OrderHandler) HandleOrders(w http.ResponseWriter, r *http.Request) {
 // @Tags orders
 // @Produce json
 // @Param id path string true "Order ID"
-// @Success 200 {object} usecase.OrderResponse "Order information"
+// @Success 200 {object} order.OrderResponse "Order information"
 // @Failure 404 {object} map[string]string "Order not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /api/orders/{id} [get]
@@ -76,7 +79,7 @@ func (h *OrderHandler) HandleOrder(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
-		respondJSON(w, http.StatusOK, order)
+		httptransport.RespondJSON(w, http.StatusOK, order)
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -103,7 +106,7 @@ func (h *OrderHandler) HandleConfirmOrder(w http.ResponseWriter, r *http.Request
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		respondJSON(w, http.StatusOK, map[string]string{"status": "confirmed"})
+		httptransport.RespondJSON(w, http.StatusOK, map[string]string{"status": "confirmed"})
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
