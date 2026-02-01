@@ -13,3 +13,4 @@ type Repository interface {
 	Update(ctx context.Context, c *company.Company) error
 	Delete(ctx context.Context, id string) error
 }
+

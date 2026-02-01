@@ -76,3 +76,4 @@ func (o *Order) Cancel() error {
 	o.UpdatedAt = time.Now()
 	return nil
 }
+

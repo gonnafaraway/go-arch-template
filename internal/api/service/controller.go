@@ -24,7 +24,7 @@ func RunServices(services ...Service) error {
 		}(srv)
 	}
 
-	// Ждем завершения всех сервисов или первую ошибку
+	// Wait for all services to complete or the first error
 	done := make(chan struct{})
 	go func() {
 		wg.Wait()

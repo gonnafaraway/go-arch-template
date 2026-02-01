@@ -12,7 +12,7 @@ var (
 	nameRegex  = regexp.MustCompile(`^[a-zA-Z0-9\s\-_]{2,100}$`)
 )
 
-// ValidationError представляет ошибку валидации
+// ValidationError represents a validation error
 type ValidationError struct {
 	Field   string
 	Message string
@@ -22,7 +22,7 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation error on field '%s': %s", e.Field, e.Message)
 }
 
-// ValidationErrors представляет множество ошибок валидации
+// ValidationErrors represents multiple validation errors
 type ValidationErrors struct {
 	Errors []ValidationError
 }
@@ -43,18 +43,18 @@ func (e *ValidationErrors) HasErrors() bool {
 	return len(e.Errors) > 0
 }
 
-// DomainValidator валидатор для доменной сущности Company
+// DomainValidator validator for Company domain entity
 type DomainValidator struct{}
 
 func NewDomainValidator() *DomainValidator {
 	return &DomainValidator{}
 }
 
-// Validate валидирует доменную сущность Company
+// Validate validates the Company domain entity
 func (v *DomainValidator) Validate(ctx context.Context, c *Company) error {
 	var errs ValidationErrors
 
-	// Валидация имени
+	// Name validation
 	if c.Name == "" {
 		errs.Add("name", "name is required")
 	} else if len(c.Name) < 2 {
@@ -65,7 +65,7 @@ func (v *DomainValidator) Validate(ctx context.Context, c *Company) error {
 		errs.Add("name", "name contains invalid characters")
 	}
 
-	// Валидация email
+	// Email validation
 	if c.Email == "" {
 		errs.Add("email", "email is required")
 	} else if !emailRegex.MatchString(c.Email) {
@@ -79,7 +79,7 @@ func (v *DomainValidator) Validate(ctx context.Context, c *Company) error {
 	return nil
 }
 
-// ValidateUpdate валидирует обновление компании
+// ValidateUpdate validates company update
 func (v *DomainValidator) ValidateUpdate(ctx context.Context, c *Company) error {
 	return v.Validate(ctx, c)
 }

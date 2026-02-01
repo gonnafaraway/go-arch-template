@@ -20,8 +20,8 @@ func PrepareJobsService(env *env.Env, emailCheckerDomain interface{}) (*Jobs, er
 
 func (j *Jobs) Run() error {
 	log.Println("Starting Jobs service...")
-	// Здесь можно запустить периодические задачи
-	// Пока просто возвращаем nil, чтобы сервис не блокировался
+	// Here you can start periodic tasks
+	// For now just return nil so the service doesn't block
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
 		defer ticker.Stop()

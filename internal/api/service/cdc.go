@@ -19,8 +19,8 @@ func PrepareCDCService(env *env.Env) (*CDC, error) {
 
 func (c *CDC) Run() error {
 	log.Println("Starting CDC service...")
-	// Здесь можно запустить Change Data Capture
-	// Пока просто возвращаем nil
+	// Here you can start Change Data Capture
+	// For now just return nil
 	return nil
 }
 

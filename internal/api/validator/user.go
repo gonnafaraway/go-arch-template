@@ -6,25 +6,25 @@ import (
 	"go-arch-template/internal/api/domain/user"
 )
 
-// CreateUserRequest структура запроса для валидации
+// CreateUserRequest request structure for validation
 type CreateUserRequest struct {
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	CompanyID string `json:"company_id"`
 }
 
-// UserRequestValidator валидатор для запросов User
+// UserRequestValidator validator for User requests
 type UserRequestValidator struct{}
 
 func NewUserRequestValidator() *UserRequestValidator {
 	return &UserRequestValidator{}
 }
 
-// ValidateCreateRequest валидирует запрос на создание пользователя
+// ValidateCreateRequest validates user creation request
 func (v *UserRequestValidator) ValidateCreateRequest(ctx context.Context, req *CreateUserRequest) error {
 	var errs ValidationErrors
 
-	// Валидация имени
+	// Name validation
 	if req.Name == "" {
 		errs.Add("name", "name is required")
 	} else if len(req.Name) < 2 {
@@ -33,13 +33,13 @@ func (v *UserRequestValidator) ValidateCreateRequest(ctx context.Context, req *C
 		errs.Add("name", "name must be at most 100 characters")
 	}
 
-	// Валидация email
+	// Email validation
 	emailValidator := &EmailValidator{}
 	if err := emailValidator.Validate(ctx, req.Email); err != nil {
 		errs.Add("email", err.Error())
 	}
 
-	// Валидация company_id
+	// Company ID validation
 	if req.CompanyID == "" {
 		errs.Add("company_id", "company_id is required")
 	}

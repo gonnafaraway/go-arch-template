@@ -7,7 +7,7 @@ import (
 	"go-arch-template/internal/api/storage"
 )
 
-// Repositories содержит все репозитории
+// Repositories contains all repositories
 type Repositories struct {
 	CompanyRepository company.Repository
 	UserRepository    user.Repository
@@ -17,21 +17,21 @@ type Repositories struct {
 func PrepareRepository(storage *storage.Storage) (*Repositories, error) {
 	repos := &Repositories{}
 
-	// Используем реальные репозитории если storage доступен, иначе моки
+	// Use real repositories if storage is available, otherwise use mocks
 	if storage.Postgres != nil {
 		repos.CompanyRepository = company.NewPostgresRepository(storage.Postgres)
-		// Можно добавить другие репозитории для PostgreSQL
+		// Can add other repositories for PostgreSQL
 	} else if storage.MongoDB != nil {
 		repos.CompanyRepository = company.NewMongoDBRepository(storage.MongoDB)
-		// Можно добавить другие репозитории для MongoDB
+		// Can add other repositories for MongoDB
 	} else {
-		// Fallback на моки
+		// Fallback to mocks
 		repos.CompanyRepository = company.NewMockRepository()
 		repos.UserRepository = user.NewMockRepository()
 		repos.OrderRepository = order.NewMockRepository()
 	}
 
-	// Если не были установлены, используем моки
+	// If not set, use mocks
 	if repos.UserRepository == nil {
 		repos.UserRepository = user.NewMockRepository()
 	}

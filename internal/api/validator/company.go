@@ -6,24 +6,24 @@ import (
 	"go-arch-template/internal/api/domain/company"
 )
 
-// CreateCompanyRequest структура запроса для валидации
+// CreateCompanyRequest request structure for validation
 type CreateCompanyRequest struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
-// CompanyRequestValidator валидатор для запросов Company
+// CompanyRequestValidator validator for Company requests
 type CompanyRequestValidator struct{}
 
 func NewCompanyRequestValidator() *CompanyRequestValidator {
 	return &CompanyRequestValidator{}
 }
 
-// ValidateCreateRequest валидирует запрос на создание компании
+// ValidateCreateRequest validates company creation request
 func (v *CompanyRequestValidator) ValidateCreateRequest(ctx context.Context, req *CreateCompanyRequest) error {
 	var errs ValidationErrors
 
-	// Валидация имени
+	// Name validation
 	if req.Name == "" {
 		errs.Add("name", "name is required")
 	} else if len(req.Name) < 2 {
@@ -32,7 +32,7 @@ func (v *CompanyRequestValidator) ValidateCreateRequest(ctx context.Context, req
 		errs.Add("name", "name must be at most 100 characters")
 	}
 
-	// Валидация email
+	// Email validation
 	emailValidator := &EmailValidator{}
 	if err := emailValidator.Validate(ctx, req.Email); err != nil {
 		errs.Add("email", err.Error())

@@ -75,7 +75,7 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 
 	uc.logger.Info(ctx, "Creating order", log.Field{Key: "user_id", Value: cmd.UserID})
 
-	// 1. Валидация запроса
+	// 1. Request validation
 	validatorItems := make([]validator.OrderItemRequest, len(cmd.Items))
 	for i, item := range cmd.Items {
 		validatorItems[i] = validator.OrderItemRequest{
@@ -94,7 +94,7 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		return nil, err
 	}
 
-	// 2. Валидация пользователя
+	// 2. User validation
 	userExists, err := uc.userRepo.Exists(ctx, cmd.UserID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to check user existence", err, log.Field{Key: "user_id", Value: cmd.UserID})
@@ -105,7 +105,7 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		return nil, errors.New("user not found")
 	}
 
-	// 3. Создание Order Items
+	// 3. Create Order Items
 	orderItems := make([]order.OrderItem, len(cmd.Items))
 	for i, item := range cmd.Items {
 		orderItems[i] = order.OrderItem{
@@ -116,26 +116,26 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		}
 	}
 
-	// 4. Создание заказа
+	// 4. Create order
 	o, err := order.NewOrder(cmd.UserID, orderItems)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to create order entity", err)
 		return nil, err
 	}
 
-	// 5. Валидация доменной сущности
+	// 5. Domain entity validation
 	if err := uc.validators.Domain.Validate(ctx, o); err != nil {
 		uc.logger.Warn(ctx, "Domain validation failed", log.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
-	// 6. Сохранение
+	// 6. Save
 	if err := uc.orderRepo.Save(ctx, o); err != nil {
 		uc.logger.Error(ctx, "Failed to save order", err, log.Field{Key: "order_id", Value: o.ID})
 		return nil, err
 	}
 
-	// 7. Создание инвойса через billing интеграцию
+	// 7. Create invoice through billing integration
 	invoiceID, err := uc.billingIntegration.CreateInvoice(ctx, o.ID, o.Total, cmd.UserID)
 	if err != nil {
 		uc.logger.Warn(ctx, "Failed to create invoice", log.Field{Key: "order_id", Value: o.ID}, log.Field{Key: "error", Value: err.Error()})
@@ -182,8 +182,8 @@ func (uc *OrderUseCase) ConfirmOrder(ctx context.Context, orderID string) error 
 		return err
 	}
 
-	// После подтверждения заказа можно обновить статус инвойса
-	// Это пример использования интеграции
+	// After order confirmation, invoice status can be updated
+	// This is an example of using the integration
 	_ = uc.billingIntegration
 
 	return nil

@@ -80,7 +80,7 @@ func (l *zapLogger) convertFields(fields []Field) []zap.Field {
 	return zapFields
 }
 
-// Fallback logger для случаев когда zap недоступен
+// Fallback logger for cases when zap is unavailable
 type fallbackLogger struct{}
 
 func NewFallbackLogger() Logger {

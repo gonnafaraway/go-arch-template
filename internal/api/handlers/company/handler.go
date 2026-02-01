@@ -53,7 +53,7 @@ func (h *CompanyHandler) HandleCompanies(w http.ResponseWriter, r *http.Request)
 		}
 		companyResp, err := h.useCase.CreateCompany(ctx, req)
 		if err != nil {
-			// Проверяем тип ошибки для правильного статус кода
+			// Check error type for correct status code
 			if response.IsValidationError(err) {
 				response.RespondError(w, http.StatusBadRequest, "validation failed", err)
 			} else {

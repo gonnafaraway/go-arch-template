@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// ValidationError представляет ошибку валидации
+// ValidationError represents a validation error
 type ValidationError struct {
 	Field   string
 	Message string
@@ -16,7 +16,7 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation error on field '%s': %s", e.Field, e.Message)
 }
 
-// ValidationErrors представляет множество ошибок валидации
+// ValidationErrors represents multiple validation errors
 type ValidationErrors struct {
 	Errors []ValidationError
 }
@@ -37,28 +37,28 @@ func (e *ValidationErrors) HasErrors() bool {
 	return len(e.Errors) > 0
 }
 
-// DomainValidator валидатор для доменной сущности Order
+// DomainValidator validator for Order domain entity
 type DomainValidator struct{}
 
 func NewDomainValidator() *DomainValidator {
 	return &DomainValidator{}
 }
 
-// Validate валидирует доменную сущность Order
+// Validate validates the Order domain entity
 func (v *DomainValidator) Validate(ctx context.Context, o *Order) error {
 	var errs ValidationErrors
 
-	// Валидация user_id
+	// User ID validation
 	if o.UserID == "" {
 		errs.Add("user_id", "user_id is required")
 	}
 
-	// Валидация items
+	// Items validation
 	if len(o.Items) == 0 {
 		errs.Add("items", "at least one item is required")
 	}
 
-	// Валидация каждого item
+	// Validate each item
 	for i, item := range o.Items {
 		if item.ProductID == "" {
 			errs.Add(fmt.Sprintf("items[%d].product_id", i), "product_id is required")
@@ -74,12 +74,12 @@ func (v *DomainValidator) Validate(ctx context.Context, o *Order) error {
 		}
 	}
 
-	// Валидация total
+	// Total validation
 	if o.Total < 0 {
 		errs.Add("total", "total must be non-negative")
 	}
 
-	// Валидация status
+	// Status validation
 	validStatuses := map[Status]bool{
 		StatusPending:   true,
 		StatusConfirmed: true,

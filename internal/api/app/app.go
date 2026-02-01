@@ -18,7 +18,7 @@ import (
 )
 
 type Application struct {
-	// Можно добавить поля для управления приложением
+	// Can add fields for application management
 }
 
 func Run() error {
@@ -31,13 +31,13 @@ func Run() error {
 	// observability sections
 	logger, err := log.NewLogger()
 	if err != nil {
-		// Fallback на простой logger
+		// Fallback to simple logger
 		logger = log.NewFallbackLogger()
 	}
 
 	tracer, err := trace.NewTracer("go-arch-template")
 	if err != nil {
-		// Fallback на noop tracer
+		// Fallback to noop tracer
 		tracer = trace.NewNoopTracer()
 	}
 	defer tracer.Shutdown(context.Background())

@@ -58,7 +58,7 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*
 
 	uc.logger.Info(ctx, "Creating user", log.Field{Key: "email", Value: req.Email})
 
-	// Валидация запроса
+	// Request validation
 	validatorReq := &validator.CreateUserRequest{
 		Name:      req.Name,
 		Email:     req.Email,
@@ -69,7 +69,7 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*
 		return nil, err
 	}
 
-	// Валидация компании через интеграцию
+	// Company validation through integration
 	valid, err := uc.companyIntegration.ValidateCompany(ctx, req.CompanyID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to validate company", err, log.Field{Key: "company_id", Value: req.CompanyID})
@@ -80,10 +80,10 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*
 		return nil, errors.New("invalid company")
 	}
 
-	// Создание доменной сущности
+	// Create domain entity
 	u := user.NewUser(req.Name, req.Email, req.CompanyID)
 
-	// Валидация доменной сущности
+	// Domain entity validation
 	if err := uc.validators.Domain.Validate(ctx, u); err != nil {
 		uc.logger.Warn(ctx, "Domain validation failed", log.Field{Key: "error", Value: err.Error()})
 		return nil, err

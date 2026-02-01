@@ -16,7 +16,7 @@ type Storage struct {
 func PrepareStorage(env *env.Env) (*Storage, error) {
 	storage := &Storage{}
 
-	// Инициализация MongoDB если указан URI
+	// Initialize MongoDB if URI is specified
 	if mongoURI := os.Getenv("MONGODB_URI"); mongoURI != "" {
 		dbName := os.Getenv("MONGODB_DATABASE")
 		if dbName == "" {
@@ -29,7 +29,7 @@ func PrepareStorage(env *env.Env) (*Storage, error) {
 		storage.MongoDB = mongoClient
 	}
 
-	// Инициализация PostgreSQL если указаны параметры
+	// Initialize PostgreSQL if parameters are specified
 	if pgHost := os.Getenv("POSTGRES_HOST"); pgHost != "" {
 		pgPort := os.Getenv("POSTGRES_PORT")
 		if pgPort == "" {

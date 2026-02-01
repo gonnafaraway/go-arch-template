@@ -55,7 +55,7 @@ func (uc *CompanyUseCase) CreateCompany(ctx context.Context, req CreateCompanyRe
 
 	uc.logger.Info(ctx, "Creating company", log.Field{Key: "name", Value: req.Name})
 
-	// Валидация запроса
+	// Request validation
 	validatorReq := &validator.CreateCompanyRequest{
 		Name:  req.Name,
 		Email: req.Email,
@@ -65,10 +65,10 @@ func (uc *CompanyUseCase) CreateCompany(ctx context.Context, req CreateCompanyRe
 		return nil, err
 	}
 
-	// Создание доменной сущности
+	// Create domain entity
 	c := company.NewCompany(req.Name, req.Email)
 
-	// Валидация доменной сущности
+	// Domain entity validation
 	if err := uc.validators.Domain.Validate(ctx, c); err != nil {
 		uc.logger.Warn(ctx, "Domain validation failed", log.Field{Key: "error", Value: err.Error()})
 		return nil, err
@@ -79,7 +79,7 @@ func (uc *CompanyUseCase) CreateCompany(ctx context.Context, req CreateCompanyRe
 		return nil, err
 	}
 
-	// Синхронизация с внешним сервисом
+	// Sync with external service
 	if err := uc.companyIntegration.SyncCompany(ctx, c.ID); err != nil {
 		uc.logger.Warn(ctx, "Failed to sync company", log.Field{Key: "company_id", Value: c.ID}, log.Field{Key: "error", Value: err.Error()})
 	}

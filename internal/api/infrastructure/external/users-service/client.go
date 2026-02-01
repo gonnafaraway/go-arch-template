@@ -42,6 +42,6 @@ func (m *MockClient) ValidateUser(ctx context.Context, userID string) (bool, err
 }
 
 func (m *MockClient) SyncUser(ctx context.Context, userID string) error {
-	// Мок синхронизации
+	// Mock synchronization
 	return nil
 }

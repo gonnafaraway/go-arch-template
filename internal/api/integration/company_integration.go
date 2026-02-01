@@ -17,14 +17,14 @@ func NewCompanyIntegration(usersClient usersservice.Client) CompanyIntegration {
 }
 
 func (i *companyIntegration) ValidateCompany(ctx context.Context, companyID string) (bool, error) {
-	// Валидация компании через внешний сервис
-	// Пока используем мок
+	// Company validation through external service
+	// For now using mock
 	return true, nil
 }
 
 func (i *companyIntegration) SyncCompany(ctx context.Context, companyID string) error {
-	// Синхронизация компании
-	// Пока используем мок
+	// Company synchronization
+	// For now using mock
 	return nil
 }
 

@@ -7,7 +7,7 @@ import (
 	"go-arch-template/internal/api/domain/order"
 )
 
-// OrderItemRequest структура элемента заказа для валидации
+// OrderItemRequest order item structure for validation
 type OrderItemRequest struct {
 	ProductID string  `json:"product_id"`
 	Name      string  `json:"name"`
@@ -15,34 +15,34 @@ type OrderItemRequest struct {
 	Price     float64 `json:"price"`
 }
 
-// CreateOrderRequest структура запроса для валидации
+// CreateOrderRequest request structure for validation
 type CreateOrderRequest struct {
 	UserID string             `json:"user_id"`
 	Items  []OrderItemRequest `json:"items"`
 }
 
-// OrderRequestValidator валидатор для запросов Order
+// OrderRequestValidator validator for Order requests
 type OrderRequestValidator struct{}
 
 func NewOrderRequestValidator() *OrderRequestValidator {
 	return &OrderRequestValidator{}
 }
 
-// ValidateCreateRequest валидирует запрос на создание заказа
+// ValidateCreateRequest validates order creation request
 func (v *OrderRequestValidator) ValidateCreateRequest(ctx context.Context, req *CreateOrderRequest) error {
 	var errs ValidationErrors
 
-	// Валидация user_id
+	// User ID validation
 	if req.UserID == "" {
 		errs.Add("user_id", "user_id is required")
 	}
 
-	// Валидация items
+	// Items validation
 	if len(req.Items) == 0 {
 		errs.Add("items", "at least one item is required")
 	}
 
-	// Валидация каждого item
+	// Validate each item
 	for i, item := range req.Items {
 		if item.ProductID == "" {
 			errs.Add(fmt.Sprintf("items[%d].product_id", i), "product_id is required")

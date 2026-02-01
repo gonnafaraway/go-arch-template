@@ -13,6 +13,6 @@ func PrepareEmailCheckerUseCase(
 	logger log.Logger,
 	tracer trace.Tracer,
 ) (interface{}, error) {
-	// Мок для email checker usecase
+	// Mock for email checker usecase
 	return struct{}{}, nil
 }

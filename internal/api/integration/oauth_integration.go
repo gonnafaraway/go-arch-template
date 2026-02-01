@@ -5,7 +5,7 @@ import (
 )
 
 type oauthIntegration struct {
-	// В реальном приложении здесь будет клиент OAuth
+	// In a real application, there would be an OAuth client here
 }
 
 func NewOAuthIntegration() OAuthIntegration {
@@ -13,7 +13,7 @@ func NewOAuthIntegration() OAuthIntegration {
 }
 
 func (i *oauthIntegration) ValidateToken(ctx context.Context, token string) (bool, error) {
-	// Мок валидации токена
+	// Mock token validation
 	if token == "" {
 		return false, nil
 	}
@@ -21,7 +21,7 @@ func (i *oauthIntegration) ValidateToken(ctx context.Context, token string) (boo
 }
 
 func (i *oauthIntegration) GetUserInfo(ctx context.Context, token string) (*UserInfo, error) {
-	// Мок получения информации о пользователе
+	// Mock user info retrieval
 	return &UserInfo{
 		UserID:  "user_1",
 		Email:   "user@example.com",

@@ -22,7 +22,7 @@ func NewClient(uri, databaseName string) (*Client, error) {
 		return nil, err
 	}
 
-	// Проверяем подключение
+	// Check connection
 	if err := client.Ping(ctx, nil); err != nil {
 		return nil, err
 	}

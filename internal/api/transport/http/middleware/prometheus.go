@@ -38,14 +38,14 @@ var (
 	)
 )
 
-// PrometheusMiddleware создает middleware для метрик Prometheus
+// PrometheusMiddleware creates middleware for Prometheus metrics
 func PrometheusMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		path := r.URL.Path
 		method := r.Method
 
-		// Обертка для ResponseWriter чтобы перехватить статус код
+		// Wrapper for ResponseWriter to intercept status code
 		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
 		next.ServeHTTP(wrapped, r)
@@ -53,14 +53,14 @@ func PrometheusMiddleware(next http.Handler) http.Handler {
 		duration := time.Since(start).Seconds()
 		status := strconv.Itoa(wrapped.statusCode)
 
-		// Записываем метрики
+		// Record metrics
 		httpRequestsTotal.WithLabelValues(method, path, status).Inc()
 		httpRequestDuration.WithLabelValues(method, path).Observe(duration)
 		httpRequestSize.WithLabelValues(method, path).Observe(float64(r.ContentLength))
 	})
 }
 
-// PrometheusHandler возвращает handler для /metrics endpoint
+// PrometheusHandler returns handler for /metrics endpoint
 func PrometheusHandler() http.Handler {
 	return promhttp.Handler()
 }
@@ -74,5 +74,6 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)
 }
+
 
 

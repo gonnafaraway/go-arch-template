@@ -6,19 +6,19 @@ import (
 	userDomain "go-arch-template/internal/api/domain/user"
 )
 
-// CompanyValidators содержит все валидаторы для Company
+// CompanyValidators contains all validators for Company
 type CompanyValidators struct {
 	Domain  *companyDomain.DomainValidator
 	Request *CompanyRequestValidator
 }
 
-// UserValidators содержит все валидаторы для User
+// UserValidators contains all validators for User
 type UserValidators struct {
 	Domain  *userDomain.DomainValidator
 	Request *UserRequestValidator
 }
 
-// OrderValidators содержит все валидаторы для Order
+// OrderValidators contains all validators for Order
 type OrderValidators struct {
 	Domain  *orderDomain.DomainValidator
 	Request *OrderRequestValidator

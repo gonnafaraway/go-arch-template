@@ -9,3 +9,4 @@ var (
 	ErrInvalidPrice    = errors.New("invalid price")
 	ErrInvalidStatus   = errors.New("invalid status")
 )
+

@@ -8,11 +8,11 @@ import (
 	sentryhttp "github.com/getsentry/sentry-go/http"
 )
 
-// SentryMiddleware создает middleware для интеграции с Sentry
+// SentryMiddleware creates middleware for Sentry integration
 func SentryMiddleware() func(http.Handler) http.Handler {
 	dsn := os.Getenv("SENTRY_DSN")
 	if dsn == "" {
-		// Если DSN не указан, возвращаем noop middleware
+		// If DSN is not specified, return noop middleware
 		return func(next http.Handler) http.Handler {
 			return next
 		}
@@ -24,7 +24,7 @@ func SentryMiddleware() func(http.Handler) http.Handler {
 		TracesSampleRate: 1.0,
 	})
 	if err != nil {
-		// Если инициализация не удалась, возвращаем noop
+		// If initialization failed, return noop
 		return func(next http.Handler) http.Handler {
 			return next
 		}

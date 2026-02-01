@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// ValidationError представляет ошибку валидации
+// ValidationError represents a validation error
 type ValidationError struct {
 	Field   string
 	Message string
@@ -18,7 +18,7 @@ func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation error on field '%s': %s", e.Field, e.Message)
 }
 
-// ValidationErrors представляет множество ошибок валидации
+// ValidationErrors represents multiple validation errors
 type ValidationErrors struct {
 	Errors []ValidationError
 }
@@ -39,22 +39,22 @@ func (e *ValidationErrors) HasErrors() bool {
 	return len(e.Errors) > 0
 }
 
-// Validator интерфейс для валидации
+// Validator interface for validation
 type Validator interface {
 	Validate(ctx context.Context, value interface{}) error
 }
 
-// DomainValidator валидатор для доменных сущностей
+// DomainValidator validator for domain entities
 type DomainValidator interface {
 	Validate(ctx context.Context, entity interface{}) error
 }
 
-// RequestValidator валидатор для HTTP запросов
+// RequestValidator validator for HTTP requests
 type RequestValidator interface {
 	ValidateRequest(ctx context.Context, req interface{}) error
 }
 
-// StringValidator валидатор для строк
+// StringValidator validator for strings
 type StringValidator struct {
 	Required bool
 	MinLen   int
@@ -73,7 +73,7 @@ func (v *StringValidator) Validate(ctx context.Context, value interface{}) error
 	}
 
 	if str == "" && !v.Required {
-		return nil // Пустая строка допустима если не требуется
+		return nil // Empty string is allowed if not required
 	}
 
 	if v.MinLen > 0 && len(str) < v.MinLen {
@@ -91,7 +91,7 @@ func (v *StringValidator) Validate(ctx context.Context, value interface{}) error
 	return nil
 }
 
-// EmailValidator валидатор для email
+// EmailValidator validator for email
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 
 type EmailValidator struct{}
@@ -113,7 +113,7 @@ func (v *EmailValidator) Validate(ctx context.Context, value interface{}) error 
 	return nil
 }
 
-// NumberValidator валидатор для чисел
+// NumberValidator validator for numbers
 type NumberValidator struct {
 	Required bool
 	Min      *float64
@@ -144,7 +144,7 @@ func (v *NumberValidator) Validate(ctx context.Context, value interface{}) error
 	return nil
 }
 
-// CompositeValidator композитный валидатор
+// CompositeValidator composite validator
 type CompositeValidator struct {
 	Validators []Validator
 }
@@ -161,5 +161,6 @@ func (v *CompositeValidator) Validate(ctx context.Context, value interface{}) er
 	}
 	return nil
 }
+
 
 

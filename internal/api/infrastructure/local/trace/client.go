@@ -57,7 +57,7 @@ func NewTracer(serviceName string) (Tracer, error) {
 }
 
 func newExporter() (tracesdk.SpanExporter, error) {
-	// Пробуем OTLP, если не работает - используем Jaeger
+	// Try OTLP, if it doesn't work - use Jaeger
 	otlpEndpoint := "localhost:4317"
 	if endpoint := os.Getenv("OTLP_ENDPOINT"); endpoint != "" {
 		otlpEndpoint = endpoint
@@ -71,7 +71,7 @@ func newExporter() (tracesdk.SpanExporter, error) {
 		return exporter, nil
 	}
 
-	// Fallback на Jaeger
+	// Fallback to Jaeger
 	jaegerEndpoint := "http://localhost:14268/api/traces"
 	if endpoint := os.Getenv("JAEGER_ENDPOINT"); endpoint != "" {
 		jaegerEndpoint = endpoint
@@ -88,7 +88,7 @@ func (t *otelTracer) Shutdown(ctx context.Context) error {
 	return t.tracerProvider.Shutdown(ctx)
 }
 
-// Noop tracer для случаев когда трассировка недоступна
+// Noop tracer for cases when tracing is unavailable
 type noopTracer struct{}
 
 func NewNoopTracer() Tracer {

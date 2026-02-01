@@ -22,12 +22,12 @@ func NewClient(host, port, user, password, dbname string) (*Client, error) {
 		return nil, err
 	}
 
-	// Настройки пула соединений
+	// Connection pool settings
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(5 * time.Minute)
 
-	// Проверяем подключение
+	// Check connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
