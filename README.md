@@ -6,7 +6,7 @@ Best optimized and effective template to develop services and apps with Go.
 
 <img width="674" height="693" alt="{7C048F03-FDD9-43A0-A643-07AE5D8BAD0A}" src="https://github.com/user-attachments/assets/9b6abf9c-335d-472a-a2a9-9ca2f39bd953" />
 
-## Architecture Overview
+## System Architecture Overview
 
 This project follows **Clean Architecture** (also known as Hexagonal Architecture or Ports & Adapters) principles, combined with **Domain-Driven Design (DDD)** concepts. The architecture is organized in layers with clear separation of concerns and dependency inversion.
 
@@ -205,6 +205,187 @@ Repository pattern allows switching between storage implementations without chan
 - **Domain Testing**: Test business logic in isolation
 - **Integration Testing**: Test component interactions
 
+## Data Architecture Overview
+
+Describes common patterns for working with data models when using clean architecture in Go. 
+The goal is to unify the design approach and avoid mixing responsibilities.
+
+## Patterns
+
+### 1. Entities (Domain Models)
+
+**Purpose:** represent key business concepts of the application (e.g., `User`, `Order`). Contain core business logic and invariants.
+
+**Characteristics:**
+* independent of external details (DB, frameworks, HTTP);
+* located in the `domain` layer of clean architecture;
+* may contain methods for validation and business rules.
+
+**Example (Go):**
+```go
+package domain
+
+import "errors"
+
+type User struct {
+    ID    string
+    Name  string
+    Email string
+}
+
+func NewUser(name, email string) (*User, error) {
+    if name == "" {
+        return nil, errors.New("name is required")
+    }
+    // ... other business validation
+    return &User{Name: name, Email: email}, nil
+}
+```
+
+### 2. Value Objects
+**Purpose:** describe characteristics or composite values without their own identifier (e.g., Email, Money, Address).
+
+**Characteristics:**
+* immutable
+* compared by value, not by reference
+* often used as fields in entities
+
+```go
+package domain
+
+import (
+    "errors"
+    "strings"
+)
+
+type Email struct {
+    value string
+}
+
+func NewEmail(value string) (*Email, error) {
+    if !strings.Contains(value, "@") {
+        return nil, errors.New("invalid email format")
+    }
+    return &Email{value: value}, nil
+}
+
+func (e Email) Value() string {
+    return e.value
+}
+```
+
+### 3. DTO (Data Transfer Object)
+**Purpose:** transfer data between application layers or via API (e.g., for HTTP requests/responses).
+
+**Characteristics:**
+* simple structure, often without methods
+* may differ from the domain model (e.g., contain fields for serialization)
+* located in the interface adapters or transport layer
+
+#### DTO example for HTTP response (Go):
+
+```go
+package transport
+
+type UserResponse struct {
+    ID   string `json:"id"`
+    Name string `json:"name"`
+}
+```
+
+### 4. Data Mapper
+**Purpose:** convert data between formats (e.g., from domain entity to DB row and back).
+
+**Characteristics:**
+* separates domain logic from persistence details
+* implements mapping functions between domain models and data storage formats
+* often used with Repository pattern
+
+#### Example (Go):
+```go
+package infrastructure
+
+import "your-app/domain"
+
+type UserMapper struct{}
+
+func (m UserMapper) ToDB(user *domain.User) map[string]interface{} {
+    return map[string]interface{}{
+        "id":    user.ID,
+        "name":  user.Name,
+        "email": user.Email,
+    }
+}
+
+func (m UserMapper) FromDB(row map[string]interface{}) *domain.User {
+    return &domain.User{
+        ID:    row["id"].(string),
+        Name:  row["name"].(string),
+        Email: row["email"].(string),
+    }
+}
+```
+
+### 5. Repository
+**Purpose:** act as an intermediary between the domain model and the data source (DB, external API).
+
+**Characteristics:**
+* hides storage details from business logic
+* provides a clean interface for data operations
+* allows easy switching between different storage implementations
+#### Example (Go):
+```go
+package repository
+
+import "your-app/domain"
+
+type UserRepository interface {
+    Create(user *domain.User) error
+    FindByID(id string) (*domain.User, error)
+    Update(user *domain.User) error
+    Delete(id string) error
+}
+```
+
+### 6. View Model
+**Purpose:** adapt data specifically for a particular interface (e.g., frontend framework requirements).
+**Characteristics:**
+* similar to DTO but focused on UI needs
+* may include additional computed fields for display
+* located in presentation layer
+
+### Full Data Flow in Clean Architecture
+**Typical data flow when processing an HTTP request:**
+* Incoming HTTP request → DTO (transport layer)
+* DTO → mapped to Domain Entity (interface adapters layer)
+* Business logic operates on the Entity (use cases layer)
+* Entity passed to Repository → Data Mapper converts to DB format
+* Response: domain data mapped to DTO/View Model → serialized to JSON/XML
+
+## Best Practices
+* Separate responsibilities: DTO for transfer, Entity for logic, Data Mapper for conversion.
+* Prefer immutability: make models immutable where possible for thread safety.
+* Use mapping libraries: consider using libraries like mapstructure to reduce boilerplate.
+* Plan versioning: design DTO/View Model versioning early for API evolution.
+* Validate early: perform input validation at the transport layer.
+* Keep domain pure: avoid importing infrastructure packages in domain models.
+
+## Directory Structure Example
+```go
+your-app/
+├── domain/                  # Entities and Value Objects
+│   ├── user.go
+│   └── email.go
+├── use-cases/             # Business logic
+├── interface-adapters/
+│   ├── transport/         # DTOs and HTTP handlers
+│   │   └── user_dto.go
+│   └── repository/        # Repository interfaces
+├── infrastructure/        # Data Mappers and DB implementations
+│   ├── mappers/
+│   └── db/
+└── main.go
+```
 ---
 
 ## Contributing
