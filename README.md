@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  <img width="920" alt="Clean Architecture infographic — Domain core, inbound Transport/Handlers, outbound Integrations" src="docs/assets/architecture.jpg" />
+  <img width="720" alt="Architecture hierarchy — Service, Domain, Use Case; Handlers / Repository / Integrations; Storage and Env; Integrations external and local" src="docs/assets/architecture.jpg" />
 </p>
 
 ---
@@ -97,14 +97,15 @@ There is **no separate Infrastructure layer** in the mental model — storage cl
 
 | Layer | Path | Role |
 | --- | --- | --- |
+| **Service** | `internal/api/service/` | Long-running API, jobs, CDC lifecycle |
 | **Domain** | `internal/api/domain/` | Entities, business rules, domain errors |
 | **Use Case** | `internal/api/usecase/` | Application workflows and orchestration |
-| **Repository** | `internal/api/repository/` | Persistence ports + Postgres / Mongo / mock impls |
-| **Integrations** | `internal/api/integration/` | Outbound edge: `external/` + `internal/`; each adapter is `client.go` / `errors.go` / `models.go` |
-| **Transport** | `internal/api/transport/` | HTTP / gRPC / RPC + middleware |
 | **Handlers** | `internal/api/handlers/` | Thin controllers: request → use case → response |
+| **Repository** | `internal/api/repository/` | Persistence ports + Postgres / Mongo / mock impls |
+| **Storage** | `internal/api/storage/` | DB / cache / queue / object-storage clients |
+| **Env** | `internal/api/env/` | Shared config used by Storage, Handlers, Integrations |
+| **Integrations** | `internal/api/integration/` | Outbound edge: `external/` + `local/` (`client.go` / `errors.go` / `models.go`) |
 | **App** | `internal/api/app/` | Composition root and DI wiring |
-| **Service** | `internal/api/service/` | Long-running API, jobs, CDC lifecycle |
 
 ### Patterns in play
 
@@ -286,8 +287,9 @@ go-arch-template/
 │   ├── integration/         # outbound edge (anti-corruption)
 │   │   ├── external/        # billing, company, usersservice, prometheus, sentry
 │   │   │   └── <name>/      # client.go · errors.go · models.go
-│   │   └── internal/        # log, oauth, trace
+│   │   └── local/           # log, oauth, trace
 │   │       └── <name>/      # client.go · errors.go · models.go
+│   ├── env/                 # shared config (Storage / Handlers / Integrations)
 │   ├── transport/           # HTTP / gRPC / RPC
 │   ├── handlers/            # HTTP controllers
 │   ├── service/             # API / jobs / CDC

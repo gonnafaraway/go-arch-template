@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1100" viewBox="0 0 1280 1100" role="img" aria-labelledby="title desc">
+  <title id="title">go-arch-template</title>
+  <desc id="desc">Premium architecture hierarchy for go-arch-template.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070B14"/>
+      <stop offset="45%" stop-color="#0B1628"/>
+      <stop offset="100%" stop-color="#08111F"/>
+    </linearGradient>
+    <radialGradient id="glowTop" cx="50%" cy="18%" r="55%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#0EA5E9" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#070B14" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowCore" cx="50%" cy="32%" r="30%">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#FBBF24" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowEnv" cx="50%" cy="88%" r="28%">
+      <stop offset="0%" stop-color="#FB923C" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#FB923C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cardGlass" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#172554" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="cardCyan" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#155E75"/>
+      <stop offset="100%" stop-color="#083344"/>
+    </linearGradient>
+    <linearGradient id="cardTeal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0F766E"/>
+      <stop offset="100%" stop-color="#115E59"/>
+    </linearGradient>
+    <linearGradient id="cardGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <linearGradient id="cardEnv" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#64748B" stop-opacity="0.5"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+    <filter id="glowBlue">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="3.5" orient="auto">
+      <path d="M0,0 L10,3.5 L0,7 Z" fill="#FB923C"/>
+    </marker>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#1E293B" opacity="0.7"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="1100" fill="url(#bg)"/>
+  <rect width="1280" height="1100" fill="url(#dots)" opacity="0.55"/>
+  <rect width="1280" height="1100" fill="url(#glowTop)"/>
+  <ellipse cx="640" cy="300" rx="260" ry="120" fill="url(#glowCore)"/>
+  <ellipse cx="640" cy="920" rx="280" ry="110" fill="url(#glowEnv)"/>
+
+  <!-- header -->
+  <text x="640" y="56" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" letter-spacing="6" fill="#7DD3FC">GO-ARCH-TEMPLATE</text>
+  <text x="640" y="100" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="36" font-weight="800" fill="#F8FAFC">Architecture that sells itself</text>
+  <text x="640" y="132" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="15" fill="#94A3B8">Clean layers. Clear ownership. Dependencies you can explain in one glance.</text>
+
+  <!-- trunk connectors -->
+  <g stroke="url(#lineGrad)" stroke-width="2.5" fill="none">
+    <path d="M640 230 V265"/>
+    <path d="M640 355 V390"/>
+    <path d="M640 480 V520"/>
+    <path d="M200 520 H1080"/>
+    <path d="M200 520 V560"/>
+    <path d="M640 520 V560"/>
+    <path d="M1080 520 V560"/>
+    <path d="M640 690 V730"/>
+    <path d="M1080 690 V730"/>
+    <path d="M980 730 H1180"/>
+    <path d="M980 730 V760"/>
+    <path d="M1180 730 V760"/>
+  </g>
+
+  <!-- dashed to Env -->
+  <g stroke="#FB923C" stroke-width="2.2" fill="none" stroke-dasharray="6 5" marker-end="url(#arrow)" opacity="0.95">
+    <path d="M200 690 C200 800, 380 860, 520 900"/>
+    <path d="M640 830 V900"/>
+    <path d="M1080 690 C1080 800, 900 860, 760 900"/>
+  </g>
+
+  <!-- SERVICE -->
+  <g filter="url(#soft)">
+    <rect x="430" y="160" width="420" height="70" rx="20" fill="url(#cardGlass)" stroke="#38BDF8" stroke-width="1.8"/>
+    <rect x="430" y="160" width="8" height="70" rx="4" fill="#38BDF8"/>
+  </g>
+  <text x="640" y="190" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#7DD3FC">ENTRYPOINT</text>
+  <text x="640" y="216" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" font-weight="800" fill="#F0F9FF">Service  ·  API / Jobs / CDC</text>
+
+  <!-- DOMAIN -->
+  <g filter="url(#soft)">
+    <rect x="460" y="285" width="360" height="70" rx="20" fill="url(#cardGold)" stroke="#FDE68A" stroke-width="1.5"/>
+  </g>
+  <text x="640" y="315" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#422006">BUSINESS CORE</text>
+  <text x="640" y="341" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="900" fill="#1C1917">Domain</text>
+
+  <!-- USE CASE -->
+  <g filter="url(#soft)">
+    <rect x="460" y="410" width="360" height="70" rx="20" fill="url(#cardCyan)" stroke="#67E8F9" stroke-width="1.6"/>
+  </g>
+  <text x="640" y="440" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#A5F3FC">ORCHESTRATION</text>
+  <text x="640" y="466" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="22" font-weight="800" fill="#ECFEFF">Use Case</text>
+
+  <!-- HANDLERS -->
+  <g filter="url(#soft)">
+    <rect x="70" y="560" width="260" height="130" rx="22" fill="url(#cardCyan)" stroke="#22D3EE" stroke-width="1.6"/>
+  </g>
+  <text x="200" y="605" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#A5F3FC">INBOUND</text>
+  <text x="200" y="640" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#ECFEFF">Handlers</text>
+  <text x="200" y="668" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#67E8F9">thin controllers · validate · map</text>
+
+  <!-- REPOSITORY -->
+  <g filter="url(#soft)">
+    <rect x="510" y="560" width="260" height="130" rx="22" fill="url(#cardTeal)" stroke="#2DD4BF" stroke-width="1.6"/>
+  </g>
+  <text x="640" y="605" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#99F6E4">PORTS</text>
+  <text x="640" y="640" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#ECFDF5">Repository</text>
+  <text x="640" y="668" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#5EEAD4">swap storage without rewriting logic</text>
+
+  <!-- INTEGRATIONS -->
+  <g filter="url(#soft)">
+    <rect x="950" y="560" width="260" height="130" rx="22" fill="url(#cardTeal)" stroke="#2DD4BF" stroke-width="1.6"/>
+  </g>
+  <text x="1080" y="605" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#99F6E4">OUTBOUND</text>
+  <text x="1080" y="640" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" font-weight="800" fill="#ECFDF5">Integrations</text>
+  <text x="1080" y="668" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#5EEAD4">anti-corruption edge</text>
+
+  <!-- STORAGE -->
+  <g filter="url(#soft)">
+    <rect x="535" y="730" width="210" height="90" rx="18" fill="#0B1F36" stroke="#60A5FA" stroke-width="1.6"/>
+  </g>
+  <text x="640" y="768" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#93C5FD">DRIVERS</text>
+  <text x="640" y="798" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" font-weight="800" fill="#DBEAFE">Storage</text>
+
+  <!-- external / local -->
+  <g filter="url(#soft)">
+    <rect x="910" y="760" width="140" height="70" rx="16" fill="#134E4A" stroke="#5EEAD4" stroke-width="1.4"/>
+  </g>
+  <text x="980" y="802" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="800" fill="#CCFBF1">external/</text>
+
+  <g filter="url(#soft)">
+    <rect x="1110" y="760" width="140" height="70" rx="16" fill="#134E4A" stroke="#5EEAD4" stroke-width="1.4"/>
+  </g>
+  <text x="1180" y="802" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="17" font-weight="800" fill="#CCFBF1">local/</text>
+
+  <!-- ENV -->
+  <g filter="url(#soft)">
+    <rect x="490" y="900" width="300" height="88" rx="22" fill="url(#cardEnv)" stroke="#FDBA74" stroke-width="1.8"/>
+  </g>
+  <text x="640" y="936" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" letter-spacing="3" fill="#FFEDD5">SHARED CONFIG</text>
+  <text x="640" y="968" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" font-weight="900" fill="#FFF7ED">Env</text>
+
+  <!-- footer pitch -->
+  <text x="640" y="1040" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="14" fill="#CBD5E1">Handlers · Storage · Integrations all read Env. Domain stays pure.</text>
+  <text x="640" y="1068" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#64748B">Clean Architecture  ·  Hexagonal  ·  Ports and Adapters  ·  DDD</text>
+</svg>

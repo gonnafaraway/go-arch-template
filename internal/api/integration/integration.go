@@ -6,12 +6,12 @@ import (
 	"go-arch-template/internal/api/integration/external/prometheus"
 	"go-arch-template/internal/api/integration/external/sentry"
 	usersservice "go-arch-template/internal/api/integration/external/usersservice"
-	"go-arch-template/internal/api/integration/internal/log"
-	"go-arch-template/internal/api/integration/internal/oauth"
-	"go-arch-template/internal/api/integration/internal/trace"
+	"go-arch-template/internal/api/integration/local/log"
+	"go-arch-template/internal/api/integration/local/oauth"
+	"go-arch-template/internal/api/integration/local/trace"
 )
 
-// Aliases for packages under integration/internal
+// Convenience aliases for local observability clients.
 type (
 	Logger = log.Client
 	Field  = log.Field
