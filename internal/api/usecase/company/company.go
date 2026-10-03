@@ -4,35 +4,33 @@ import (
 	"context"
 
 	"go-arch-template/internal/api/domain/company"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
-	"go-arch-template/internal/api/validator"
-
+	companyIntegration "go-arch-template/internal/api/integration/external/company"
 	companyRepo "go-arch-template/internal/api/repository/company"
+	"go-arch-template/internal/api/validator"
 )
 
 type CompanyUseCase struct {
-	repo               companyRepo.Repository
-	companyIntegration integration.CompanyIntegration
-	logger             log.Logger
-	tracer             trace.Tracer
-	validators         *validator.CompanyValidators
+	repo       companyRepo.Repository
+	companies  companyIntegration.Client
+	logger     integration.Logger
+	tracer     integration.Tracer
+	validators *validator.CompanyValidators
 }
 
 func NewCompanyUseCase(
 	repo companyRepo.Repository,
-	companyIntegration integration.CompanyIntegration,
-	logger log.Logger,
-	tracer trace.Tracer,
+	companies companyIntegration.Client,
+	logger integration.Logger,
+	tracer integration.Tracer,
 	validators *validator.CompanyValidators,
 ) *CompanyUseCase {
 	return &CompanyUseCase{
-		repo:               repo,
-		companyIntegration: companyIntegration,
-		logger:             logger,
-		tracer:             tracer,
-		validators:         validators,
+		repo:       repo,
+		companies:  companies,
+		logger:     logger,
+		tracer:     tracer,
+		validators: validators,
 	}
 }
 
@@ -53,38 +51,34 @@ func (uc *CompanyUseCase) CreateCompany(ctx context.Context, req CreateCompanyRe
 	ctx, span := uc.tracer.Start(ctx, "CompanyUseCase.CreateCompany")
 	defer span.End()
 
-	uc.logger.Info(ctx, "Creating company", log.Field{Key: "name", Value: req.Name})
+	uc.logger.Info(ctx, "Creating company", integration.Field{Key: "name", Value: req.Name})
 
-	// Request validation
 	validatorReq := &validator.CreateCompanyRequest{
 		Name:  req.Name,
 		Email: req.Email,
 	}
 	if err := uc.validators.Request.ValidateCreateRequest(ctx, validatorReq); err != nil {
-		uc.logger.Warn(ctx, "Request validation failed", log.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Request validation failed", integration.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
-	// Create domain entity
 	c := company.NewCompany(req.Name, req.Email)
 
-	// Domain entity validation
 	if err := uc.validators.Domain.Validate(ctx, c); err != nil {
-		uc.logger.Warn(ctx, "Domain validation failed", log.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Domain validation failed", integration.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
 	if err := uc.repo.Create(ctx, c); err != nil {
-		uc.logger.Error(ctx, "Failed to create company", err, log.Field{Key: "name", Value: req.Name})
+		uc.logger.Error(ctx, "Failed to create company", err, integration.Field{Key: "name", Value: req.Name})
 		return nil, err
 	}
 
-	// Sync with external service
-	if err := uc.companyIntegration.SyncCompany(ctx, c.ID); err != nil {
-		uc.logger.Warn(ctx, "Failed to sync company", log.Field{Key: "company_id", Value: c.ID}, log.Field{Key: "error", Value: err.Error()})
+	if err := uc.companies.SyncCompany(ctx, c.ID); err != nil {
+		uc.logger.Warn(ctx, "Failed to sync company", integration.Field{Key: "company_id", Value: c.ID}, integration.Field{Key: "error", Value: err.Error()})
 	}
 
-	uc.logger.Info(ctx, "Company created successfully", log.Field{Key: "company_id", Value: c.ID})
+	uc.logger.Info(ctx, "Company created successfully", integration.Field{Key: "company_id", Value: c.ID})
 
 	return &CompanyResponse{
 		ID:        c.ID,
@@ -129,13 +123,13 @@ func (uc *CompanyUseCase) ListCompanies(ctx context.Context) ([]*CompanyResponse
 
 func PrepareCompanyUseCase(
 	repo companyRepo.Repository,
-	companyIntegration integration.CompanyIntegration,
-	logger log.Logger,
-	tracer trace.Tracer,
+	companies companyIntegration.Client,
+	logger integration.Logger,
+	tracer integration.Tracer,
 ) (*CompanyUseCase, error) {
 	validators, err := validator.PrepareCompanyValidators()
 	if err != nil {
 		return nil, err
 	}
-	return NewCompanyUseCase(repo, companyIntegration, logger, tracer, validators), nil
+	return NewCompanyUseCase(repo, companies, logger, tracer, validators), nil
 }

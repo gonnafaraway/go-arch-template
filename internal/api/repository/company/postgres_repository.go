@@ -67,7 +67,7 @@ func (r *PostgresRepository) FindAll(ctx context.Context) ([]*company.Company, e
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var companies []*company.Company
 	for rows.Next() {

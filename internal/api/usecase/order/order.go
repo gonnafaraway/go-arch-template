@@ -5,13 +5,11 @@ import (
 	"errors"
 
 	"go-arch-template/internal/api/domain/order"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
-	"go-arch-template/internal/api/validator"
-
+	"go-arch-template/internal/api/integration/external/billing"
 	orderRepo "go-arch-template/internal/api/repository/order"
 	userRepo "go-arch-template/internal/api/repository/user"
+	"go-arch-template/internal/api/validator"
 )
 
 type CreateOrderCommand struct {
@@ -43,29 +41,29 @@ type OrderResponse struct {
 }
 
 type OrderUseCase struct {
-	orderRepo          orderRepo.Repository
-	userRepo           userRepo.Repository
-	billingIntegration integration.BillingIntegration
-	logger             log.Logger
-	tracer             trace.Tracer
-	validators         *validator.OrderValidators
+	orderRepo  orderRepo.Repository
+	userRepo   userRepo.Repository
+	billing    billing.Client
+	logger     integration.Logger
+	tracer     integration.Tracer
+	validators *validator.OrderValidators
 }
 
 func NewOrderUseCase(
 	orderRepo orderRepo.Repository,
 	userRepo userRepo.Repository,
-	billingIntegration integration.BillingIntegration,
-	logger log.Logger,
-	tracer trace.Tracer,
+	billingClient billing.Client,
+	logger integration.Logger,
+	tracer integration.Tracer,
 	validators *validator.OrderValidators,
 ) *OrderUseCase {
 	return &OrderUseCase{
-		orderRepo:          orderRepo,
-		userRepo:           userRepo,
-		billingIntegration: billingIntegration,
-		logger:             logger,
-		tracer:             tracer,
-		validators:         validators,
+		orderRepo:  orderRepo,
+		userRepo:   userRepo,
+		billing:    billingClient,
+		logger:     logger,
+		tracer:     tracer,
+		validators: validators,
 	}
 }
 
@@ -73,9 +71,8 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 	ctx, span := uc.tracer.Start(ctx, "OrderUseCase.CreateOrder")
 	defer span.End()
 
-	uc.logger.Info(ctx, "Creating order", log.Field{Key: "user_id", Value: cmd.UserID})
+	uc.logger.Info(ctx, "Creating order", integration.Field{Key: "user_id", Value: cmd.UserID})
 
-	// 1. Request validation
 	validatorItems := make([]validator.OrderItemRequest, len(cmd.Items))
 	for i, item := range cmd.Items {
 		validatorItems[i] = validator.OrderItemRequest{
@@ -90,22 +87,20 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		Items:  validatorItems,
 	}
 	if err := uc.validators.Request.ValidateCreateRequest(ctx, validatorReq); err != nil {
-		uc.logger.Warn(ctx, "Request validation failed", log.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Request validation failed", integration.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
-	// 2. User validation
 	userExists, err := uc.userRepo.Exists(ctx, cmd.UserID)
 	if err != nil {
-		uc.logger.Error(ctx, "Failed to check user existence", err, log.Field{Key: "user_id", Value: cmd.UserID})
+		uc.logger.Error(ctx, "Failed to check user existence", err, integration.Field{Key: "user_id", Value: cmd.UserID})
 		return nil, err
 	}
 	if !userExists {
-		uc.logger.Warn(ctx, "User not found", log.Field{Key: "user_id", Value: cmd.UserID})
+		uc.logger.Warn(ctx, "User not found", integration.Field{Key: "user_id", Value: cmd.UserID})
 		return nil, errors.New("user not found")
 	}
 
-	// 3. Create Order Items
 	orderItems := make([]order.OrderItem, len(cmd.Items))
 	for i, item := range cmd.Items {
 		orderItems[i] = order.OrderItem{
@@ -116,34 +111,34 @@ func (uc *OrderUseCase) CreateOrder(ctx context.Context, cmd CreateOrderCommand)
 		}
 	}
 
-	// 4. Create order
 	o, err := order.NewOrder(cmd.UserID, orderItems)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to create order entity", err)
 		return nil, err
 	}
 
-	// 5. Domain entity validation
 	if err := uc.validators.Domain.Validate(ctx, o); err != nil {
-		uc.logger.Warn(ctx, "Domain validation failed", log.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Domain validation failed", integration.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
-	// 6. Save
 	if err := uc.orderRepo.Save(ctx, o); err != nil {
-		uc.logger.Error(ctx, "Failed to save order", err, log.Field{Key: "order_id", Value: o.ID})
+		uc.logger.Error(ctx, "Failed to save order", err, integration.Field{Key: "order_id", Value: o.ID})
 		return nil, err
 	}
 
-	// 7. Create invoice through billing integration
-	invoiceID, err := uc.billingIntegration.CreateInvoice(ctx, o.ID, o.Total, cmd.UserID)
+	invoice, err := uc.billing.CreateInvoice(ctx, billing.CreateInvoiceRequest{
+		OrderID: o.ID,
+		Amount:  o.Total,
+		UserID:  cmd.UserID,
+	})
 	if err != nil {
-		uc.logger.Warn(ctx, "Failed to create invoice", log.Field{Key: "order_id", Value: o.ID}, log.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Failed to create invoice", integration.Field{Key: "order_id", Value: o.ID}, integration.Field{Key: "error", Value: err.Error()})
 	} else {
-		uc.logger.Info(ctx, "Invoice created", log.Field{Key: "invoice_id", Value: invoiceID}, log.Field{Key: "order_id", Value: o.ID})
+		uc.logger.Info(ctx, "Invoice created", integration.Field{Key: "invoice_id", Value: invoice.ID}, integration.Field{Key: "order_id", Value: o.ID})
 	}
 
-	uc.logger.Info(ctx, "Order created successfully", log.Field{Key: "order_id", Value: o.ID}, log.Field{Key: "total", Value: o.Total})
+	uc.logger.Info(ctx, "Order created successfully", integration.Field{Key: "order_id", Value: o.ID}, integration.Field{Key: "total", Value: o.Total})
 
 	return &CreateOrderResponse{
 		OrderID: o.ID,
@@ -178,15 +173,7 @@ func (uc *OrderUseCase) ConfirmOrder(ctx context.Context, orderID string) error 
 		return err
 	}
 
-	if err := uc.orderRepo.Update(ctx, o); err != nil {
-		return err
-	}
-
-	// After order confirmation, invoice status can be updated
-	// This is an example of using the integration
-	_ = uc.billingIntegration
-
-	return nil
+	return uc.orderRepo.Update(ctx, o)
 }
 
 func (uc *OrderUseCase) ListOrdersByUser(ctx context.Context, userID string) ([]*OrderResponse, error) {
@@ -212,13 +199,13 @@ func (uc *OrderUseCase) ListOrdersByUser(ctx context.Context, userID string) ([]
 func PrepareOrderUseCase(
 	orderRepo orderRepo.Repository,
 	userRepo userRepo.Repository,
-	billingIntegration integration.BillingIntegration,
-	logger log.Logger,
-	tracer trace.Tracer,
+	billingClient billing.Client,
+	logger integration.Logger,
+	tracer integration.Tracer,
 ) (*OrderUseCase, error) {
 	validators, err := validator.PrepareOrderValidators()
 	if err != nil {
 		return nil, err
 	}
-	return NewOrderUseCase(orderRepo, userRepo, billingIntegration, logger, tracer, validators), nil
+	return NewOrderUseCase(orderRepo, userRepo, billingClient, logger, tracer, validators), nil
 }

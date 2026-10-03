@@ -76,7 +76,7 @@ func (r *MongoDBRepository) FindAll(ctx context.Context) ([]*company.Company, er
 	if err != nil {
 		return nil, err
 	}
-	defer cursor.Close(ctx)
+	defer func() { _ = cursor.Close(ctx) }()
 
 	var companies []*company.Company
 	for cursor.Next(ctx) {

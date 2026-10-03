@@ -5,35 +5,33 @@ import (
 	"errors"
 
 	"go-arch-template/internal/api/domain/user"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
-	"go-arch-template/internal/api/validator"
-
+	companyIntegration "go-arch-template/internal/api/integration/external/company"
 	userRepo "go-arch-template/internal/api/repository/user"
+	"go-arch-template/internal/api/validator"
 )
 
 type UserUseCase struct {
-	repo               userRepo.Repository
-	companyIntegration integration.CompanyIntegration
-	logger             log.Logger
-	tracer             trace.Tracer
-	validators         *validator.UserValidators
+	repo       userRepo.Repository
+	companies  companyIntegration.Client
+	logger     integration.Logger
+	tracer     integration.Tracer
+	validators *validator.UserValidators
 }
 
 func NewUserUseCase(
 	repo userRepo.Repository,
-	companyIntegration integration.CompanyIntegration,
-	logger log.Logger,
-	tracer trace.Tracer,
+	companies companyIntegration.Client,
+	logger integration.Logger,
+	tracer integration.Tracer,
 	validators *validator.UserValidators,
 ) *UserUseCase {
 	return &UserUseCase{
-		repo:               repo,
-		companyIntegration: companyIntegration,
-		logger:             logger,
-		tracer:             tracer,
-		validators:         validators,
+		repo:       repo,
+		companies:  companies,
+		logger:     logger,
+		tracer:     tracer,
+		validators: validators,
 	}
 }
 
@@ -56,45 +54,41 @@ func (uc *UserUseCase) CreateUser(ctx context.Context, req CreateUserRequest) (*
 	ctx, span := uc.tracer.Start(ctx, "UserUseCase.CreateUser")
 	defer span.End()
 
-	uc.logger.Info(ctx, "Creating user", log.Field{Key: "email", Value: req.Email})
+	uc.logger.Info(ctx, "Creating user", integration.Field{Key: "email", Value: req.Email})
 
-	// Request validation
 	validatorReq := &validator.CreateUserRequest{
 		Name:      req.Name,
 		Email:     req.Email,
 		CompanyID: req.CompanyID,
 	}
 	if err := uc.validators.Request.ValidateCreateRequest(ctx, validatorReq); err != nil {
-		uc.logger.Warn(ctx, "Request validation failed", log.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Request validation failed", integration.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
-	// Company validation through integration
-	valid, err := uc.companyIntegration.ValidateCompany(ctx, req.CompanyID)
+	valid, err := uc.companies.ValidateCompany(ctx, req.CompanyID)
 	if err != nil {
-		uc.logger.Error(ctx, "Failed to validate company", err, log.Field{Key: "company_id", Value: req.CompanyID})
+		uc.logger.Error(ctx, "Failed to validate company", err, integration.Field{Key: "company_id", Value: req.CompanyID})
 		return nil, err
 	}
 	if !valid {
-		uc.logger.Warn(ctx, "Invalid company", log.Field{Key: "company_id", Value: req.CompanyID})
+		uc.logger.Warn(ctx, "Invalid company", integration.Field{Key: "company_id", Value: req.CompanyID})
 		return nil, errors.New("invalid company")
 	}
 
-	// Create domain entity
 	u := user.NewUser(req.Name, req.Email, req.CompanyID)
 
-	// Domain entity validation
 	if err := uc.validators.Domain.Validate(ctx, u); err != nil {
-		uc.logger.Warn(ctx, "Domain validation failed", log.Field{Key: "error", Value: err.Error()})
+		uc.logger.Warn(ctx, "Domain validation failed", integration.Field{Key: "error", Value: err.Error()})
 		return nil, err
 	}
 
 	if err := uc.repo.Create(ctx, u); err != nil {
-		uc.logger.Error(ctx, "Failed to create user", err, log.Field{Key: "email", Value: req.Email})
+		uc.logger.Error(ctx, "Failed to create user", err, integration.Field{Key: "email", Value: req.Email})
 		return nil, err
 	}
 
-	uc.logger.Info(ctx, "User created successfully", log.Field{Key: "user_id", Value: u.ID})
+	uc.logger.Info(ctx, "User created successfully", integration.Field{Key: "user_id", Value: u.ID})
 
 	return &UserResponse{
 		ID:        u.ID,
@@ -142,13 +136,13 @@ func (uc *UserUseCase) ListUsers(ctx context.Context) ([]*UserResponse, error) {
 
 func PrepareUserUseCase(
 	repo userRepo.Repository,
-	companyIntegration integration.CompanyIntegration,
-	logger log.Logger,
-	tracer trace.Tracer,
+	companies companyIntegration.Client,
+	logger integration.Logger,
+	tracer integration.Tracer,
 ) (*UserUseCase, error) {
 	validators, err := validator.PrepareUserValidators()
 	if err != nil {
 		return nil, err
 	}
-	return NewUserUseCase(repo, companyIntegration, logger, tracer, validators), nil
+	return NewUserUseCase(repo, companies, logger, tracer, validators), nil
 }

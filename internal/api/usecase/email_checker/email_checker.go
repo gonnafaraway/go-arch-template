@@ -2,17 +2,19 @@ package email_checker
 
 import (
 	"go-arch-template/internal/api/env"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
+	companyIntegration "go-arch-template/internal/api/integration/external/company"
 )
 
 func PrepareEmailCheckerUseCase(
 	env *env.Env,
-	companyIntegration integration.CompanyIntegration,
-	logger log.Logger,
-	tracer trace.Tracer,
+	companies companyIntegration.Client,
+	logger integration.Logger,
+	tracer integration.Tracer,
 ) (interface{}, error) {
-	// Mock for email checker usecase
+	_ = env
+	_ = companies
+	_ = logger
+	_ = tracer
 	return struct{}{}, nil
 }

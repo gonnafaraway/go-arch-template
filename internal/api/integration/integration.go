@@ -1,42 +1,57 @@
 package integration
 
 import (
-	"context"
+	"go-arch-template/internal/api/integration/external/billing"
+	"go-arch-template/internal/api/integration/external/company"
+	"go-arch-template/internal/api/integration/external/prometheus"
+	"go-arch-template/internal/api/integration/external/sentry"
+	usersservice "go-arch-template/internal/api/integration/external/usersservice"
+	"go-arch-template/internal/api/integration/internal/log"
+	"go-arch-template/internal/api/integration/internal/oauth"
+	"go-arch-template/internal/api/integration/internal/trace"
+)
 
-	"go-arch-template/internal/api/infrastructure/external/billing"
-	usersservice "go-arch-template/internal/api/infrastructure/external/users-service"
+// Aliases for packages under integration/internal
+type (
+	Logger = log.Client
+	Field  = log.Field
+	Tracer = trace.Client
 )
 
 type Integrations struct {
-	CompanyIntegration CompanyIntegration
-	BillingIntegration BillingIntegration
-	OAuthIntegration   OAuthIntegration
-}
-
-type CompanyIntegration interface {
-	ValidateCompany(ctx context.Context, companyID string) (bool, error)
-	SyncCompany(ctx context.Context, companyID string) error
-}
-
-type BillingIntegration interface {
-	CreateInvoice(ctx context.Context, orderID string, amount float64, userID string) (string, error)
-	GetInvoice(ctx context.Context, invoiceID string) (*billing.InvoiceResponse, error)
-	CancelInvoice(ctx context.Context, invoiceID string) error
-}
-
-type OAuthIntegration interface {
-	ValidateToken(ctx context.Context, token string) (bool, error)
-	GetUserInfo(ctx context.Context, token string) (*UserInfo, error)
+	Billing    billing.Client
+	Company    company.Client
+	Users      usersservice.Client
+	OAuth      oauth.Client
+	Prometheus prometheus.Client
+	Sentry     sentry.Client
+	Log        Logger
+	Trace      Tracer
 }
 
 func PrepareIntegration(env interface{}) (*Integrations, error) {
-	billingClient := billing.NewMockClient()
-	usersClient := usersservice.NewMockClient()
+	_ = env
+
+	logger, err := log.NewClient()
+	if err != nil {
+		logger = log.NewFallbackClient()
+	}
+
+	tracer, err := trace.NewClient("go-arch-template")
+	if err != nil {
+		tracer = trace.NewNoopClient()
+	}
+
+	users := usersservice.NewClient()
 
 	return &Integrations{
-		CompanyIntegration: NewCompanyIntegration(usersClient),
-		BillingIntegration: NewBillingIntegration(billingClient),
-		OAuthIntegration:   NewOAuthIntegration(),
+		Billing:    billing.NewClient(),
+		Company:    company.NewClient(users),
+		Users:      users,
+		OAuth:      oauth.NewClient(),
+		Prometheus: prometheus.NewClient(),
+		Sentry:     sentry.NewClient(),
+		Log:        logger,
+		Trace:      tracer,
 	}, nil
 }
-

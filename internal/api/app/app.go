@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"go-arch-template/internal/api/env"
-	"go-arch-template/internal/api/infrastructure/local/log"
-	"go-arch-template/internal/api/infrastructure/local/trace"
 	"go-arch-template/internal/api/integration"
 	"go-arch-template/internal/api/repository"
 	"go-arch-template/internal/api/service"
@@ -17,85 +15,77 @@ import (
 	userUseCase "go-arch-template/internal/api/usecase/user"
 )
 
-type Application struct {
-	// Can add fields for application management
-}
+type Application struct{}
 
 func Run() error {
-	// env sections
 	env, err := env.PrepareEnv()
 	if err != nil {
 		return err
 	}
 
-	// observability sections
-	logger, err := log.NewLogger()
+	integrations, err := integration.PrepareIntegration(env)
 	if err != nil {
-		// Fallback to simple logger
-		logger = log.NewFallbackLogger()
+		return err
 	}
+	defer func() { _ = integrations.Trace.Shutdown(context.Background()) }()
 
-	tracer, err := trace.NewTracer("go-arch-template")
-	if err != nil {
-		// Fallback to noop tracer
-		tracer = trace.NewNoopTracer()
-	}
-	defer tracer.Shutdown(context.Background())
-
-	// storage sections
 	storages, err := storage.PrepareStorage(env)
 	if err != nil {
 		return err
 	}
 
-	// integrations sections
-	integrations, err := integration.PrepareIntegration(env)
-	if err != nil {
-		return err
-	}
-
-	// repositories sections
 	repo, err := repository.PrepareRepository(storages)
 	if err != nil {
 		return err
 	}
 
-	// usecases section
-	//api usecases
-	companyUC, err := companyUseCase.PrepareCompanyUseCase(repo.CompanyRepository, integrations.CompanyIntegration, logger, tracer)
-	if err != nil {
-		return err
-	}
-	orderUC, err := orderUseCase.PrepareOrderUseCase(repo.OrderRepository, repo.UserRepository, integrations.BillingIntegration, logger, tracer)
-	if err != nil {
-		return err
-	}
-	userUC, err := userUseCase.PrepareUserUseCase(repo.UserRepository, integrations.CompanyIntegration, logger, tracer)
-	if err != nil {
-		return err
-	}
-
-	//jobs usecases
-	emailCheckerUseCase, err := email_checker.PrepareEmailCheckerUseCase(env, integrations.CompanyIntegration, logger, tracer)
-	if err != nil {
-		return err
-	}
-
-	// services section
-	apiService, err := service.PrepareAPIService(
-		env,
-		companyUC,
-		userUC,
-		orderUC,
+	companyUC, err := companyUseCase.PrepareCompanyUseCase(
+		repo.CompanyRepository,
+		integrations.Company,
+		integrations.Log,
+		integrations.Trace,
 	)
 	if err != nil {
 		return err
 	}
 
-	jobsService, err := service.PrepareJobsService(
-		env,
-		emailCheckerUseCase,
+	orderUC, err := orderUseCase.PrepareOrderUseCase(
+		repo.OrderRepository,
+		repo.UserRepository,
+		integrations.Billing,
+		integrations.Log,
+		integrations.Trace,
 	)
+	if err != nil {
+		return err
+	}
+
+	userUC, err := userUseCase.PrepareUserUseCase(
+		repo.UserRepository,
+		integrations.Company,
+		integrations.Log,
+		integrations.Trace,
+	)
+	if err != nil {
+		return err
+	}
+
+	emailCheckerUseCase, err := email_checker.PrepareEmailCheckerUseCase(
+		env,
+		integrations.Company,
+		integrations.Log,
+		integrations.Trace,
+	)
+	if err != nil {
+		return err
+	}
+
+	apiService, err := service.PrepareAPIService(env, companyUC, userUC, orderUC)
+	if err != nil {
+		return err
+	}
+
+	jobsService, err := service.PrepareJobsService(env, emailCheckerUseCase)
 	if err != nil {
 		return err
 	}
@@ -105,15 +95,5 @@ func Run() error {
 		return err
 	}
 
-	// run app section
-	err = service.RunServices(
-		apiService,
-		jobsService,
-		cdcService,
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return service.RunServices(apiService, jobsService, cdcService)
 }

@@ -28,5 +28,5 @@ func RespondError(w http.ResponseWriter, status int, message string, err error) 
 		response["validation_errors"] = validationErr.Errors
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
